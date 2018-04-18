@@ -11,6 +11,7 @@ enum BRDFMethod
 struct GBuffer
 {
   GLuint fbo;
+  GLuint depth;
   GLuint position;
   GLuint normals;
   GLuint albedoMetallic;
@@ -39,6 +40,7 @@ private:
   GBuffer m_gbuffer;
 
   GLuint m_screenVbo;
+  GLuint m_screenVao;
   Shader* m_screenShader;
 
 public:

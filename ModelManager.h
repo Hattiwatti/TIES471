@@ -1,4 +1,6 @@
 #pragma once
+#include "Material.h"
+#include "Model.h"
 #include <vector>
 
 class ModelManager
@@ -7,12 +9,12 @@ public:
   ModelManager();
   ~ModelManager();
 
-  bool LoadObj(const char* filename);
+  void LoadObj(const char* filename);
   void Draw();
 
 private:
-
-private:
+  std::vector<Model*> m_models;
+  std::vector<Material*> m_materials;
 
 public:
   ModelManager(ModelManager const&) = delete;

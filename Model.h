@@ -3,15 +3,28 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+struct VertexData
+{
+  glm::vec3 position;
+  glm::vec3 normal;
+  glm::vec2 texCoord;
+
+  VertexData(glm::vec3 pos, glm::vec3 norm, glm::vec2 tex) :
+    position(pos),
+    normal(norm),
+    texCoord(tex)
+  {
+
+  }
+};
+
 class Model
 {
 public:
   Model();
   ~Model();
 
-  Model(std::vector<glm::vec3> const& vertices,
-        std::vector<glm::vec3> const& normals,
-        std::vector<glm::vec3> const& texCoords,
+  Model(std::vector<VertexData> const& vertices,
         std::vector<GLuint> const& indices,
         int materialIndex);
 

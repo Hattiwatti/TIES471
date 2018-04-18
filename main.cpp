@@ -1,5 +1,6 @@
 #define GLEW_STATIC
 
+#include "ModelManager.h"
 #include "Renderer.h"
 
 #include <GLFW/glfw3.h>
@@ -71,23 +72,36 @@ int main(int argc, char* argv[])
   ImGui_ImplGlfwGL3_Init(window, true);
   ImGui::StyleColorsDark();
 
+  //glEnableClientState(GL_VERTEX_ARRAY);
+
+  ModelManager modelManager;
   Renderer renderer;
+  
   renderer.Initialize(g_initialSize.x, g_initialSize.y);
+  modelManager.LoadObj("./Resources/PBRSphere.obj");
+
+
+  glDepthMask(GL_TRUE);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
+  glClearDepth(1.0f);
 
   while(!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
 
-    //renderer->NewFrame();
+    renderer.NewFrame();
 
-    //renderer->SetupGPass();
+    renderer.SetupGeometryPass();
+    modelManager.Draw();
+
+    renderer.SetupLightingPass(0);
     //modelManager->Draw();
     //renderer->SetupLightingPass();
     //modelManager->Draw();
     //renderer->Present();
 
-    if (g_showUI)
-      drawUI();
+    drawUI();
 
     glfwSwapBuffers(window);
   }
