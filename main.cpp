@@ -1,12 +1,11 @@
 #define GLEW_STATIC
 
-#include <GL/glew.h>
+#include "Renderer.h"
+
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
-#include <cstdio>
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <Windows.h>
 
@@ -19,7 +18,7 @@
 
 static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
-static bool             g_showUI = false;
+static       bool       g_showUI  = false;
 
 static void errorCallback(int error, const char* description)
 {
@@ -72,10 +71,12 @@ int main(int argc, char* argv[])
   ImGui_ImplGlfwGL3_Init(window, true);
   ImGui::StyleColorsDark();
 
+  Renderer renderer;
+  renderer.Initialize(g_initialSize.x, g_initialSize.y);
+
   while(!glfwWindowShouldClose(window))
   {
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glfwPollEvents();
 
     //renderer->NewFrame();
 
@@ -84,14 +85,6 @@ int main(int argc, char* argv[])
     //renderer->SetupLightingPass();
     //modelManager->Draw();
     //renderer->Present();
-    glfwPollEvents();
-
-    if (GetAsyncKeyState(VK_F5) & 0x8000)
-    {
-      g_showUI = !g_showUI;
-      while (GetAsyncKeyState(VK_F5) & 0x8000)
-        Sleep(1);
-    }
 
     if (g_showUI)
       drawUI();

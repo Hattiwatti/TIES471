@@ -1,17 +1,17 @@
 #pragma once
+#include <GL/glew.h>
 
 class Shader
 {
 public:
   Shader();
+  Shader(const char* vertexShader, const char* fragmentShader);
   ~Shader();
 
-  bool CompileProgram(const char* vertexShader, const char* fragmentShader);
   void Bind();
 
 private:
-  int m_programID;
-
+  GLuint m_programID;
 
 public:
   Shader(Shader const&) = delete;

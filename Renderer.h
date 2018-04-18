@@ -1,10 +1,21 @@
 #pragma once
+#include <GL/glew.h>
+#include "Shader.h"
 
 enum BRDFMethod
 {
-  Lambertian,
   BlinnPhong,
   CookTorrance
+};
+
+struct GBuffer
+{
+  GLuint fbo;
+  GLuint position;
+  GLuint normals;
+  GLuint albedoMetallic;
+  GLuint roughness;
+  Shader* shader;
 };
 
 class Renderer
@@ -13,22 +24,22 @@ public:
   Renderer();
   ~Renderer();
 
-  bool Initialize();
+  void Initialize(int width, int height);
 
   void NewFrame();
   void SetupGeometryPass();
   void SetupLightingPass(int method);
   void Present();
 
-  void UpdateViewMatrix();
-
 private:
-  bool CreateBuffers();
+  void CreateBuffers(int width, int height);
   bool CreateShaders();
 
-
 private:
+  GBuffer m_gbuffer;
 
+  GLuint m_screenVbo;
+  Shader* m_screenShader;
 
 public:
   Renderer(Renderer const&) = delete;
