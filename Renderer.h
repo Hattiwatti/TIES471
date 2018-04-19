@@ -36,6 +36,8 @@ public:
   void UpdateViewMatrix(glm::mat4 const& viewMatrix) { m_viewMatrix = viewMatrix; }
   void UpdateViewPos(glm::vec3 const& viewPos) { m_viewPos = viewPos; }
 
+  void DrawSkybox();
+
 private:
   void CreateBuffers(int width, int height);
   bool CreateShaders();
@@ -49,6 +51,11 @@ private:
   glm::mat4 m_viewMatrix;
   glm::mat4 m_projMatrix;
   glm::vec3 m_viewPos;
+
+  GLuint skybox;
+  GLuint skyboxVBO;
+  GLuint skyboxIBO;
+  Shader* m_skyboxShader;
 
 public:
   Renderer(Renderer const&) = delete;

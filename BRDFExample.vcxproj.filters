@@ -109,5 +109,11 @@
     <None Include="Shaders\ScreenVertex.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
+    <None Include="Shaders\SkyboxFrag.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\SkyboxVertex.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -8,11 +8,12 @@ uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_albedoMetal;
 uniform sampler2D texture_roughness;
+uniform sampler2D texture_depth;
 
 uniform int method;
 uniform vec3 viewPos;
 
-const vec3 globalLight = normalize(vec3(0, -1, -1));
+const vec3 globalLight = normalize(vec3(1.7, -1, -1));
 vec3 diffuseLighting(vec3 color, vec3 N, vec3 L)
 {
   float I_d = max(0, dot(N, L));

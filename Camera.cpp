@@ -3,7 +3,7 @@
 #include <Windows.h>
 
 Camera::Camera() :
-  m_position(0, 0, 3),
+  m_position(0, 3, 10),
   m_rotation(glm::vec3(0, glm::radians(0.f), 0)),
   m_viewMatrix(glm::lookAt(glm::vec3(0, 0, 2), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0))),
   m_pitch(0),
@@ -36,11 +36,13 @@ void Camera::Update(double dt)
   {
     glm::quat qPitch = glm::quat(glm::vec3(0.5*dt,0, 0));
     m_rotation = qPitch * m_rotation;
+    m_pitch += 0.5*dt;
   }
   if (GetAsyncKeyState(VK_DOWN) & 0x8000)
   {
     glm::quat qPitch = glm::quat(glm::vec3(-0.5*dt,0, 0));
     m_rotation = qPitch * m_rotation;
+    m_pitch -= 0.5*dt;
   }
 
   m_rotation = glm::quat(glm::vec3(m_pitch, m_yaw,0));

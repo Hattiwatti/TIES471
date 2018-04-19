@@ -89,6 +89,7 @@ int main(int argc, char* argv[])
 
   glDepthMask(GL_TRUE);
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_STENCIL_TEST);
   glDepthFunc(GL_LESS);
   glClearDepth(1.0f);
 

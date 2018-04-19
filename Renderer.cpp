@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include <SOIL/SOIL.h>
+
 static const glm::vec3 g_ScreenQuad[4] =
 {
   glm::vec3(-1.f, -1.f, 0),
@@ -9,9 +11,41 @@ static const glm::vec3 g_ScreenQuad[4] =
   glm::vec3(1.f,  1.f, 0),
   glm::vec3(-1.f, 1.f, 0)
 };
-
 static glm::mat4 g_projection = glm::perspective(glm::radians(80.f), 1.7777f, 0.1f, 10000.f);
-static const glm::mat4 g_view = glm::lookAt(glm::vec3(0, 0, 2), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+
+static const glm::vec3 skyboxVertices[24] = 
+{
+  {-1000,-1000, 1000 },
+  {-1000, 1000, 1000 },
+  { 1000, 1000, 1000 },
+  { 1000,-1000, 1000 },
+
+  {-1000,-1000, -1000 },
+  {-1000, 1000, -1000 },
+  { 1000, 1000, -1000 },
+  { 1000,-1000, -1000 },
+
+{  1000,-1000,-1000 },
+{  1000,-1000, 1000 },
+{  1000, 1000, 1000 },
+{  1000, 1000,-1000 },
+
+{ -1000,-1000, 1000 },
+{ -1000,-1000,-1000 },
+{ -1000, 1000,-1000 },
+{ -1000, 1000, 1000 },
+
+{ 1000, 1000, 1000 },
+{-1000, 1000, 1000 },
+{-1000, 1000,-1000 },
+{ 1000, 1000,-1000 },
+
+{ 1000,-1000, 1000 },
+{ 1000,-1000,-1000 },
+{-1000,-1000,-1000 },
+{-1000,-1000, 1000 }
+
+};
 
 Renderer::Renderer()
 {
@@ -25,11 +59,31 @@ Renderer::~Renderer()
 
 void Renderer::Initialize(int width, int height)
 {
-  g_projection = glm::perspective(glm::radians(50.f), (float)width/(float)height, 0.1f, 10000.f);
+  g_projection = glm::perspective(glm::radians(50.f), (float)width / (float)height, 0.1f, 10000.f);
   CreateBuffers(width, height);
 
   m_screenShader = new Shader("./Shaders/ScreenVertex.glsl", "./Shaders/ScreenFrag.glsl");
   m_gbuffer.shader = new Shader("./Shaders/GeometryVertex.glsl", "./Shaders/GeometryFrag.glsl");
+  m_skyboxShader = new Shader("./Shaders/SkyboxVertex.glsl", "./Shaders/SkyboxFrag.glsl");
+
+  skybox = SOIL_load_OGL_cubemap("./Resources/Textures/miramar/miramar_lf.tga",
+    "./Resources/Textures/miramar/miramar_rt.tga",
+    "./Resources/Textures/miramar/miramar_up.tga",
+    "./Resources/Textures/miramar/miramar_dn.tga",
+    "./Resources/Textures/miramar/miramar_ft.tga",
+    "./Resources/Textures/miramar/miramar_bk.tga",
+    SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
+  
+  glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glGenBuffers(1, &skyboxVBO);
+  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 }
 
 void Renderer::CreateBuffers(int width, int height)
@@ -42,10 +96,10 @@ void Renderer::CreateBuffers(int width, int height)
 
   glGenTextures(1, &m_gbuffer.depth);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.depth);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_gbuffer.depth, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_gbuffer.depth, 0);
 
   glGenTextures(1, &m_gbuffer.position);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.position);
@@ -90,10 +144,15 @@ void Renderer::CreateBuffers(int width, int height)
   //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0xC, 0);
   //glEnableVertexAttribArray(0);
   //glBindVertexArray(0);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_gbuffer.depth, 0);
 }
 
 void Renderer::NewFrame()
 {
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClearDepth(1.0f);
   glClearColor(0, 0, 0, 1);
@@ -104,8 +163,14 @@ void Renderer::SetupGeometryPass()
 {
   glBindFramebuffer(GL_FRAMEBUFFER, m_gbuffer.fbo);
   glClearColor(0, 0, 0, 1);
+  glStencilMask(0xFF);
   glClearDepth(1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearStencil(0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_ALWAYS, 1, 0xFF);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
   m_gbuffer.shader->Bind();
 
@@ -144,6 +209,11 @@ void Renderer::SetupLightingPass(int method)
   // so the lighting shader can use them.
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, m_screenVbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0xC, 0);
@@ -157,6 +227,8 @@ void Renderer::SetupLightingPass(int method)
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedoMetallic);
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.roughness);
+  glActiveTexture(GL_TEXTURE4);
+  glBindTexture(GL_TEXTURE_2D, m_gbuffer.depth);
 
   GLuint textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_albedoMetal");
   glUniform1i(textureLocation, 2);
@@ -166,6 +238,8 @@ void Renderer::SetupLightingPass(int method)
   glUniform1i(textureLocation, 1);
   textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_roughness");
   glUniform1i(textureLocation, 3);
+  textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_depth");
+  glUniform1i(textureLocation, 4);
 
   GLuint methodLocation = glGetUniformLocation(m_screenShader->GetID(), "method");
   glUniform1i(methodLocation, method);
@@ -173,10 +247,17 @@ void Renderer::SetupLightingPass(int method)
   GLuint viewPosLocation = glGetUniformLocation(m_screenShader->GetID(), "viewPos");
   glUniform3fv(viewPosLocation, 1, &m_viewPos[0]);
 
+  glStencilFunc(GL_EQUAL, 1, 0xFF);
+  glStencilMask(0);
+
   // Draw full screen squad to evaluate gbuffer and draw final image.
   // Optionally implement a light manager and draw lighting volumes
   // so only fragments illuminated by the lights are processed
   glDrawArrays(GL_QUADS, 0, 4);
+
+  glDisable(GL_STENCIL_TEST);
+  glDisable(GL_CULL_FACE);
+  DrawSkybox();
 }
 
 // Probably obsolete
@@ -187,4 +268,20 @@ void Renderer::Present()
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, m_screenVbo);
+}
+
+void Renderer::DrawSkybox()
+{
+  m_skyboxShader->Bind();
+  GLuint matrixPos = glGetUniformLocation(m_skyboxShader->GetID(), "MVPMatrix");
+  glm::mat4 modelViewProj = g_projection * m_viewMatrix;
+  glUniformMatrix4fv(matrixPos, 1, GL_FALSE, &modelViewProj[0][0]);
+
+  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(0);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+  glDrawArrays(GL_QUADS, 0, 24);
 }

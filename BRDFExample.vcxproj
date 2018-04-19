@@ -151,6 +151,8 @@
     <None Include="Shaders\GeometryVertex.glsl" />
     <None Include="Shaders\ScreenFrag.glsl" />
     <None Include="Shaders\ScreenVertex.glsl" />
+    <None Include="Shaders\SkyboxFrag.glsl" />
+    <None Include="Shaders\SkyboxVertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
