@@ -108,6 +108,8 @@ void Renderer::SetupGeometryPass()
 
   m_gbuffer.shader->Bind();
 
+  // Model matrix is not really needed since loading vertices from
+  // an .obj already transforms them in world space.
   glm::mat4 modelViewProj = g_projection * g_view;
   glm::mat3 normalMatrix{ 1,0,0,0,1,0,0,0,1 };
   glUniformMatrix4fv(0, 1, GL_FALSE, &modelViewProj[0][0]);
