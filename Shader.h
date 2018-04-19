@@ -1,6 +1,10 @@
 #pragma once
 #include <GL/glew.h>
 
+//
+// TODO: Remove class and just use program ID
+//
+
 class Shader
 {
 public:
@@ -9,6 +13,9 @@ public:
   ~Shader();
 
   void Bind();
+  GLuint GetID() {
+    return m_programID;
+  }
 
 private:
   GLuint m_programID;

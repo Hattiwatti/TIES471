@@ -119,6 +119,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -144,6 +145,12 @@
     <ClInclude Include="ModelManager.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\GeometryFrag.glsl" />
+    <None Include="Shaders\GeometryVertex.glsl" />
+    <None Include="Shaders\ScreenFrag.glsl" />
+    <None Include="Shaders\ScreenVertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

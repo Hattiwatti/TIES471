@@ -40,7 +40,6 @@ private:
   GBuffer m_gbuffer;
 
   GLuint m_screenVbo;
-  GLuint m_screenVao;
   Shader* m_screenShader;
 
 public:

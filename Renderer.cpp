@@ -10,7 +10,7 @@ static const glm::vec3 g_ScreenQuad[4] =
   glm::vec3(1.f, -1.f, 0)
 };
 
-static const glm::mat4 g_projection = glm::perspective(glm::radians(80.f), 1.7777f, 0.1f, 10000.f);
+static glm::mat4 g_projection = glm::perspective(glm::radians(80.f), 1.7777f, 0.1f, 10000.f);
 static const glm::mat4 g_view = glm::lookAt(glm::vec3(0, 0, 2), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
 
 Renderer::Renderer()
@@ -25,6 +25,7 @@ Renderer::~Renderer()
 
 void Renderer::Initialize(int width, int height)
 {
+  g_projection = glm::perspective(glm::radians(80.f), (float)width/height, 0.1f, 10000.f);
   CreateBuffers(width, height);
 
   m_screenShader = new Shader("./Shaders/ScreenVertex.glsl", "./Shaders/ScreenFrag.glsl");
@@ -121,10 +122,7 @@ void Renderer::SetupLightingPass(int method = 0)
   m_screenShader->Bind();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-  //glBindVertexArray(m_screenVao);
   glBindBuffer(GL_ARRAY_BUFFER, m_screenVbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0xC, 0);
   glEnableVertexAttribArray(0);
@@ -138,6 +136,18 @@ void Renderer::SetupLightingPass(int method = 0)
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.roughness);
 
+  GLuint textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_albedoMetal");
+  glUniform1i(textureLocation, 2);
+  textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_position");
+  glUniform1i(textureLocation, 0);
+  textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_normal");
+  glUniform1i(textureLocation, 1);
+  textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_roughness");
+  glUniform1i(textureLocation, 3);
+  
+  // Draw full screen squad to evaluate gbuffer and draw final image.
+  // Optionally implement a light manager and draw lighting volumes
+  // so only fragments illuminated by the lights are processed
   glDrawArrays(GL_QUADS, 0, 4);
 }
 

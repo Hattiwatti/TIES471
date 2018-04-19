@@ -17,7 +17,7 @@
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "opengl32.lib")
 
-static const glm::vec2  g_initialSize(1280, 720);
+static const glm::vec2  g_initialSize(640, 480);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI  = false;
 
@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
   renderer.Initialize(g_initialSize.x, g_initialSize.y);
   modelManager.LoadObj("./Resources/PBRSphere.obj");
 
-
   glDepthMask(GL_TRUE);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
@@ -96,11 +95,8 @@ int main(int argc, char* argv[])
     modelManager.Draw();
 
     renderer.SetupLightingPass(0);
-    //modelManager->Draw();
-    //renderer->SetupLightingPass();
-    //modelManager->Draw();
-    //renderer->Present();
-
+    //TODO: Implement light manager for multiple light sources
+    //lightManager.DrawLights()
     drawUI();
 
     glfwSwapBuffers(window);
