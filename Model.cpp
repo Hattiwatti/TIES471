@@ -32,16 +32,13 @@ Model::Model( std::vector<VertexData> const& vertices,
 
 void Model::Draw()
 {
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-  glEnableVertexAttribArray(2);
-
   glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)0);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)0xC);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)0x18);
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)0x18);
+  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)0x24);
 
   glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, NULL);
 }

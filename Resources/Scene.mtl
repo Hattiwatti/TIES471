@@ -1,0 +1,20 @@
+newmtl StingrayPBS1SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 0.00
+map_Bump Textures\tile4b_normal-ogl.png
+map_Pm Textures\tile4b_metallic.png
+map_Kd Textures\tile4b_basecolor.png
+
+newmtl StingrayPBS2SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 0.00
+map_Bump Textures\rustediron-streaks_normal.png
+map_Pm Textures\rustediron-streaks_metallic.png
+map_Kd Textures\rustediron-streaks_basecolor.png
+map_Pr Textures\rustediron-streaks_roughness.png

@@ -1,5 +1,6 @@
 #pragma once
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include "Shader.h"
 
 enum BRDFMethod
@@ -32,6 +33,9 @@ public:
   void SetupLightingPass(int method);
   void Present();
 
+  void UpdateViewMatrix(glm::mat4 const& viewMatrix) { m_viewMatrix = viewMatrix; }
+  void UpdateViewPos(glm::vec3 const& viewPos) { m_viewPos = viewPos; }
+
 private:
   void CreateBuffers(int width, int height);
   bool CreateShaders();
@@ -41,6 +45,10 @@ private:
 
   GLuint m_screenVbo;
   Shader* m_screenShader;
+
+  glm::mat4 m_viewMatrix;
+  glm::mat4 m_projMatrix;
+  glm::vec3 m_viewPos;
 
 public:
   Renderer(Renderer const&) = delete;

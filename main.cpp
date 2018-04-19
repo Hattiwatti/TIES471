@@ -1,5 +1,6 @@
 #define GLEW_STATIC
 
+#include "Camera.h"
 #include "ModelManager.h"
 #include "Renderer.h"
 
@@ -17,9 +18,13 @@
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "opengl32.lib")
 
-static const glm::vec2  g_initialSize(640, 480);
+static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI  = false;
+
+static       int        g_method = 0;
+
+static const char*      methods = "Final\0Position\0Normal\0Diffuse\0Metallic\0Roughness";
 
 static void errorCallback(int error, const char* description)
 {
@@ -37,6 +42,7 @@ static void drawUI()
   ImGui::Begin("Test");
   {
     ImGui::Text("Hello world");
+    ImGui::Combo("Draw method", &g_method, methods);
   }ImGui::End();
   ImGui::Render();
   ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
@@ -74,29 +80,48 @@ int main(int argc, char* argv[])
 
   //glEnableClientState(GL_VERTEX_ARRAY);
 
+  Camera camera;
   ModelManager modelManager;
   Renderer renderer;
   
   renderer.Initialize(g_initialSize.x, g_initialSize.y);
-  modelManager.LoadObj("./Resources/PBRSphere.obj");
+  modelManager.LoadObj("./Resources/Scene.obj");
 
   glDepthMask(GL_TRUE);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
   glClearDepth(1.0f);
 
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+
+  double lastFrame = glfwGetTime();
+
   while(!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
+    
+    double dt = glfwGetTime() - lastFrame;;
+    lastFrame = glfwGetTime();
 
-    renderer.NewFrame();
+    camera.Update(dt);
+    renderer.UpdateViewMatrix(camera.GetViewMatrix());
+    renderer.UpdateViewPos(camera.GetPosition());
 
-    renderer.SetupGeometryPass();
-    modelManager.Draw();
+    // Rendering passes
+    {
+      renderer.NewFrame();
 
-    renderer.SetupLightingPass(0);
-    //TODO: Implement light manager for multiple light sources
-    //lightManager.DrawLights()
+      renderer.SetupGeometryPass();
+      modelManager.Draw();
+
+      renderer.SetupLightingPass(g_method);
+
+      //TODO: Implement light manager for multiple light sources
+      //lightManager.DrawLights()
+    }
+
+
     drawUI();
 
     glfwSwapBuffers(window);

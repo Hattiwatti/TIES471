@@ -5,9 +5,9 @@
 static const glm::vec3 g_ScreenQuad[4] =
 {
   glm::vec3(-1.f, -1.f, 0),
-  glm::vec3(-1.f,  1.f, 0),
+  glm::vec3(1.f,  -1.f, 0),
   glm::vec3(1.f,  1.f, 0),
-  glm::vec3(1.f, -1.f, 0)
+  glm::vec3(-1.f, 1.f, 0)
 };
 
 static glm::mat4 g_projection = glm::perspective(glm::radians(80.f), 1.7777f, 0.1f, 10000.f);
@@ -25,7 +25,7 @@ Renderer::~Renderer()
 
 void Renderer::Initialize(int width, int height)
 {
-  g_projection = glm::perspective(glm::radians(80.f), (float)width/height, 0.1f, 10000.f);
+  g_projection = glm::perspective(glm::radians(50.f), (float)width/(float)height, 0.1f, 10000.f);
   CreateBuffers(width, height);
 
   m_screenShader = new Shader("./Shaders/ScreenVertex.glsl", "./Shaders/ScreenFrag.glsl");
@@ -103,23 +103,45 @@ void Renderer::NewFrame()
 void Renderer::SetupGeometryPass()
 {
   glBindFramebuffer(GL_FRAMEBUFFER, m_gbuffer.fbo);
-  glClearColor(1, 1, 1, 1);
+  glClearColor(0, 0, 0, 1);
   glClearDepth(1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   m_gbuffer.shader->Bind();
 
-  // Model matrix is not really needed since loading vertices from
-  // an .obj already transforms them in world space.
-  glm::mat4 modelViewProj = g_projection * g_view;
-  glm::mat3 normalMatrix{ 1,0,0,0,1,0,0,0,1 };
+  GLuint textureLocation = glGetUniformLocation(m_gbuffer.shader->GetID(), "texture_Diffuse");
+  glUniform1i(textureLocation, 0);
+  textureLocation = glGetUniformLocation(m_gbuffer.shader->GetID(), "texture_Normal");
+  glUniform1i(textureLocation, 1);
+  textureLocation = glGetUniformLocation(m_gbuffer.shader->GetID(), "texture_Metal");
+  glUniform1i(textureLocation, 2);
+  textureLocation = glGetUniformLocation(m_gbuffer.shader->GetID(), "texture_Roughness");
+  glUniform1i(textureLocation, 3);
+
+  // Model matrix is not really needed since a single .obj
+  // is used as the whole scene, so vertices are already in
+  // world space.
+  glm::mat4 modelViewProj = g_projection * m_viewMatrix;
+  glm::mat3 normalMatrix = glm::mat3( glm::transpose( glm::inverse(m_viewMatrix) ) );
   glUniformMatrix4fv(0, 1, GL_FALSE, &modelViewProj[0][0]);
   glUniformMatrix3fv(1, 1, GL_FALSE, &normalMatrix[0][0]);
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+  glEnableVertexAttribArray(3);
 }
 
-void Renderer::SetupLightingPass(int method = 0)
+void Renderer::SetupLightingPass(int method)
 {
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
+  glDisableVertexAttribArray(3);
+
   m_screenShader->Bind();
+
+  // Bind back-buffer for drawing, bind gbuffer textures
+  // so the lighting shader can use them.
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -144,13 +166,20 @@ void Renderer::SetupLightingPass(int method = 0)
   glUniform1i(textureLocation, 1);
   textureLocation = glGetUniformLocation(m_screenShader->GetID(), "texture_roughness");
   glUniform1i(textureLocation, 3);
+
+  GLuint methodLocation = glGetUniformLocation(m_screenShader->GetID(), "method");
+  glUniform1i(methodLocation, method);
   
+  GLuint viewPosLocation = glGetUniformLocation(m_screenShader->GetID(), "viewPos");
+  glUniform3fv(viewPosLocation, 1, &m_viewPos[0]);
+
   // Draw full screen squad to evaluate gbuffer and draw final image.
   // Optionally implement a light manager and draw lighting volumes
   // so only fragments illuminated by the lights are processed
   glDrawArrays(GL_QUADS, 0, 4);
 }
 
+// Probably obsolete
 void Renderer::Present()
 {
   glDisableVertexAttribArray(1);
