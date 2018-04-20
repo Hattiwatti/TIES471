@@ -9,7 +9,10 @@ public:
   ~Camera();
 
   void Update(double dt);
+  void HandleMouseRotation(double dt, double dX, double dY);
+
   const glm::mat4 GetTransform() { return m_transform; }
+  const float GetFov() { return m_fieldOfView; }
 
 private:
   glm::vec3 m_position;
@@ -17,6 +20,7 @@ private:
   float m_pitch;
   float m_yaw;
   float m_roll;
+  float m_fieldOfView;
 
   glm::mat4 m_transform;
 

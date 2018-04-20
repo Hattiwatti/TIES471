@@ -25,6 +25,13 @@ struct UniformBlock
   glm::vec3 cameraPosition;
 };
 
+// Use a struct for now
+struct DirectionalLight
+{
+  glm::mat4 viewMatrix;
+  glm::mat4 projMatrix;
+  glm::vec3 color;
+};
 
 class Renderer
 {
@@ -39,7 +46,7 @@ public:
   void LightingPass(int method);
   void Present();
 
-  void UpdateMatrices(glm::mat4 const& cameraTransform);
+  void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);
   void DrawSkybox();
 
 private:
@@ -54,13 +61,19 @@ private:
 
   GLuint m_uniformBuffer;
   UniformBlock m_uniformBlock;
+
   glm::mat4 m_viewMatrix;
   glm::mat4 m_projMatrix;
   glm::vec3 m_viewPos;
+  float m_fieldOfView;
+  int m_screenWidth;
+  int m_screenHeight;
 
   GLuint skybox;
   GLuint skyboxVBO;
   GLuint skyboxIBO;
+
+  GLuint skyboxIrradiance;
 
 public:
   Renderer(Renderer const&) = delete;

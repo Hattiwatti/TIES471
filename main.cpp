@@ -20,11 +20,11 @@
 
 static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
-static       bool       g_showUI  = false;
+static       bool       g_showUI = false;
 
 static       int        g_method = 0;
 
-static const char*      methods = "Final\0Position\0Normal\0Diffuse\0Metallic\0Roughness";
+static const char*      methods = "Final\0Position\0Normal\0Diffuse\0Metallic\0Roughness\0Irradiance\0";
 
 static void errorCallback(int error, const char* description)
 {
@@ -48,12 +48,19 @@ static void drawUI()
   ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+  if (key == GLFW_KEY_E && action == GLFW_PRESS)
+  {
+    printf("aaaa");
+  }
+}
 int main(int argc, char* argv[])
 {
   glfwSetErrorCallback(errorCallback);
   if (!glfwInit())
   {
-    printf("Failed to initialize GLFW\n");
+    std::cerr << ("Failed to initialize GLFW\n");
     return 0;
   }
 
@@ -63,7 +70,9 @@ int main(int argc, char* argv[])
     printf("Failed to create a window\n");
     return 0;
   }
+
   glfwSetWindowSizeCallback(window, windowSizeCallback);
+  glfwSetInputMode(window, GLFW_CURSOR, g_showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
   glfwMakeContextCurrent(window);
 
   GLenum err = glewInit();
@@ -85,7 +94,7 @@ int main(int argc, char* argv[])
   Renderer renderer;
   
   renderer.Initialize(g_initialSize.x, g_initialSize.y);
-  modelManager.LoadObj("./Resources/Scene.obj");
+  modelManager.LoadObj("./Resources/SceneNew.obj");
 
   glDepthMask(GL_TRUE);
   glEnable(GL_DEPTH_TEST);
@@ -97,16 +106,32 @@ int main(int argc, char* argv[])
   glCullFace(GL_BACK);
 
   double lastFrame = glfwGetTime();
-
+  double mouseX = 0, mouseY = 0;
+  glfwGetCursorPos(window, &mouseX, &mouseY);
   while(!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
-    
+
     double dt = glfwGetTime() - lastFrame;;
     lastFrame = glfwGetTime();
 
+    if (glfwGetKey(window, GLFW_KEY_INSERT) == GLFW_PRESS)
+    {
+      g_showUI = !g_showUI;
+      glfwSetInputMode(window, GLFW_CURSOR, g_showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    }
+
+    double newMouseX = 0, newMouseY = 0;
+    glfwGetCursorPos(window, &newMouseX, &newMouseY);
+    if(!g_showUI)
+      camera.HandleMouseRotation(dt, newMouseX - mouseX, newMouseY - mouseY);
+    mouseX = newMouseX; 
+    mouseY = newMouseY;
+
+    // Update camera input and send transform and field of view
+    // to renderer so matrices can be updated.
     camera.Update(dt);
-    renderer.UpdateMatrices(camera.GetTransform());
+    renderer.UpdateMatrices(camera.GetTransform(), camera.GetFov());
 
     // Rendering passes
     {
@@ -117,12 +142,12 @@ int main(int argc, char* argv[])
 
       renderer.LightingPass(g_method);
 
-      //TODO: Implement light manager for multiple light sources
+      //TODO: Maybe implement light manager for multiple light sources
       //lightManager.DrawLights()
     }
 
-
-    drawUI();
+    if(g_showUI)
+      drawUI();
 
     glfwSwapBuffers(window);
   }

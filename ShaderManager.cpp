@@ -88,10 +88,6 @@ void ShaderManager::AddShader(std::string const& name, const char* sVertexFile, 
 {
   GLuint programID = compileShaderProgram(sVertexFile, sFragmentFile);
   m_shaderPrograms.insert({ name, programID });
-
-  GLuint blockIndex = glGetUniformBlockIndex(programID, "ViewBlock");
-  //if (blockIndex != -1)
-    //glUniformBlockBinding(programID, blockIndex, 0);
 }
 
 void ShaderManager::UseShader(std::string const& name)
