@@ -1,7 +1,7 @@
 #pragma once
 #include <GL/glew.h>
 #include <glm/glm.hpp>
-#include "Shader.h"
+#include "ShaderManager.h"
 
 enum BRDFMethod
 {
@@ -17,8 +17,14 @@ struct GBuffer
   GLuint normals;
   GLuint albedoMetallic;
   GLuint roughness;
-  Shader* shader;
 };
+
+struct UniformBlock
+{
+  glm::mat4 modelViewProj;
+  glm::vec3 cameraPosition;
+};
+
 
 class Renderer
 {
@@ -29,25 +35,25 @@ public:
   void Initialize(int width, int height);
 
   void NewFrame();
-  void SetupGeometryPass();
-  void SetupLightingPass(int method);
+  void GeometryPass();
+  void LightingPass(int method);
   void Present();
 
-  void UpdateViewMatrix(glm::mat4 const& viewMatrix) { m_viewMatrix = viewMatrix; }
-  void UpdateViewPos(glm::vec3 const& viewPos) { m_viewPos = viewPos; }
-
+  void UpdateMatrices(glm::mat4 const& cameraTransform);
   void DrawSkybox();
 
 private:
   void CreateBuffers(int width, int height);
-  bool CreateShaders();
+  void CreateShaders();
 
 private:
+  ShaderManager m_shaderManager;
+
   GBuffer m_gbuffer;
-
   GLuint m_screenVbo;
-  Shader* m_screenShader;
 
+  GLuint m_uniformBuffer;
+  UniformBlock m_uniformBlock;
   glm::mat4 m_viewMatrix;
   glm::mat4 m_projMatrix;
   glm::vec3 m_viewPos;
@@ -55,7 +61,6 @@ private:
   GLuint skybox;
   GLuint skyboxVBO;
   GLuint skyboxIBO;
-  Shader* m_skyboxShader;
 
 public:
   Renderer(Renderer const&) = delete;

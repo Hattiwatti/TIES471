@@ -106,17 +106,16 @@ int main(int argc, char* argv[])
     lastFrame = glfwGetTime();
 
     camera.Update(dt);
-    renderer.UpdateViewMatrix(camera.GetViewMatrix());
-    renderer.UpdateViewPos(camera.GetPosition());
+    renderer.UpdateMatrices(camera.GetTransform());
 
     // Rendering passes
     {
       renderer.NewFrame();
 
-      renderer.SetupGeometryPass();
+      renderer.GeometryPass();
       modelManager.Draw();
 
-      renderer.SetupLightingPass(g_method);
+      renderer.LightingPass(g_method);
 
       //TODO: Implement light manager for multiple light sources
       //lightManager.DrawLights()

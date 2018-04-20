@@ -2,16 +2,20 @@
 
 layout (location = 0) out vec4 FragColor;
 
+layout(std140) uniform ViewBlock
+{
+  mat4 ModelViewProj;
+  vec3 CameraPos;
+};
+
 in vec2 texCoord;
 
 uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_albedoMetal;
 uniform sampler2D texture_roughness;
-uniform sampler2D texture_depth;
 
 uniform int method;
-uniform vec3 viewPos;
 
 const vec3 globalLight = normalize(vec3(1.7, -1, -1));
 vec3 diffuseLighting(vec3 color, vec3 N, vec3 L)
@@ -41,7 +45,7 @@ vec3 lambert(vec3 color)
 vec3 globalLightPass(vec3 diffuseColor, vec3 fragPos, vec3 fragNormal)
 {
   vec3 lightDir = -globalLight;
-  vec3 viewDir = normalize(viewPos - fragPos);
+  vec3 viewDir = normalize(CameraPos - fragPos);
 
   vec3 diffuse = diffuseLighting(diffuseColor, fragNormal, lightDir);
   vec3 specular = specularLighting(fragNormal, lightDir, viewDir);

@@ -1,7 +1,6 @@
-#include "Shader.h"
+#include "ShaderManager.h"
 #include <fstream>
 #include <iostream>
-#include <vector>
 
 static GLint compileShader(const char* shaderPath, GLenum type)
 {
@@ -73,23 +72,50 @@ static GLint compileShaderProgram(const char* vertexShaderPath, const char* frag
   return shaderProgram;
 }
 
-Shader::Shader() :
-  m_programID(0)
+
+ShaderManager::ShaderManager() :
+  m_activeShader(0)
 {
 
 }
 
-Shader::~Shader()
+ShaderManager::~ShaderManager()
 {
 
 }
 
-Shader::Shader(const char* vertexShader, const char* fragmentShader)
+void ShaderManager::AddShader(std::string const& name, const char* sVertexFile, const char* sFragmentFile)
 {
-  m_programID = compileShaderProgram(vertexShader, fragmentShader);
+  GLuint programID = compileShaderProgram(sVertexFile, sFragmentFile);
+  m_shaderPrograms.insert({ name, programID });
+
+  GLuint blockIndex = glGetUniformBlockIndex(programID, "ViewBlock");
+  //if (blockIndex != -1)
+    //glUniformBlockBinding(programID, blockIndex, 0);
 }
 
-void Shader::Bind()
+void ShaderManager::UseShader(std::string const& name)
 {
-  glUseProgram(m_programID);
+  auto result = m_shaderPrograms.find(name);
+  if (result == m_shaderPrograms.end())
+  {
+    std::cerr << "Shader \"" << name << "\" could not be found" << std::endl;
+    abort();
+  }
+
+  m_activeShader = result->second;
+  m_activeName = name;
+  glUseProgram(m_activeShader);
+}
+
+void ShaderManager::SetUniform1i(const char* uniformName, int value)
+{
+  GLuint uniformLocation = glGetUniformLocation(m_activeShader, uniformName);
+  if (uniformLocation == -1)
+  {
+    std::cerr << "Uniform \"" << uniformName << "\" does not exist in " << m_activeName << std::endl;
+    abort();
+  }
+
+  glUniform1i(uniformLocation, value);
 }

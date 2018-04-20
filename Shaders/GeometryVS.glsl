@@ -1,7 +1,10 @@
 #version 400 core
 
-uniform mat4 MVPMatrix;
-uniform mat3 normalMatrix;
+layout (std140) uniform ViewBlock
+{
+  mat4 ModelViewProj;
+  vec3 CameraPos;
+};
 
 layout(location = 0)in vec3 position;
 layout(location = 1)in vec3 normal;
@@ -17,7 +20,7 @@ out VertexData {
 
 void main()
 {
-  gl_Position = MVPMatrix * vec4(position, 1.0);
+  gl_Position = ModelViewProj * vec4(position, 1.0);
   VertexOut.position = position;
   VertexOut.normal = normalize(normal);//normalize(normalMatrix * normal);
   VertexOut.texCoord = texCoord;

@@ -129,7 +129,7 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -144,15 +144,15 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelManager.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\GeometryFrag.glsl" />
-    <None Include="Shaders\GeometryVertex.glsl" />
-    <None Include="Shaders\ScreenFrag.glsl" />
-    <None Include="Shaders\ScreenVertex.glsl" />
-    <None Include="Shaders\SkyboxFrag.glsl" />
-    <None Include="Shaders\SkyboxVertex.glsl" />
+    <None Include="Shaders\GeometryFS.glsl" />
+    <None Include="Shaders\GeometryVS.glsl" />
+    <None Include="Shaders\LightingFS.glsl" />
+    <None Include="Shaders\LightingVS.glsl" />
+    <None Include="Shaders\SkyboxFS.glsl" />
+    <None Include="Shaders\SkyboxVS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

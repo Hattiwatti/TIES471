@@ -42,9 +42,6 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ModelManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,6 +49,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,33 +86,33 @@
     <ClInclude Include="ModelManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\GeometryFrag.glsl">
+    <None Include="Shaders\GeometryFS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\GeometryVertex.glsl">
+    <None Include="Shaders\GeometryVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\ScreenFrag.glsl">
+    <None Include="Shaders\LightingFS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\ScreenVertex.glsl">
+    <None Include="Shaders\LightingVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\SkyboxFrag.glsl">
+    <None Include="Shaders\SkyboxFS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\SkyboxVertex.glsl">
+    <None Include="Shaders\SkyboxVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>

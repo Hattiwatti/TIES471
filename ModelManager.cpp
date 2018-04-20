@@ -125,7 +125,7 @@ void ModelManager::LoadObj(const char* sFilename)
   for (auto& material : materials)
     m_materials.push_back(new Material(material));
 
-  std::cout << "Created " << m_materials.size() << " materials";
+  std::cout << "Created " << m_materials.size() << " materials" << std::endl;
 }
 
 void ModelManager::Draw()
