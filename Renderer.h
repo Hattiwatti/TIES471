@@ -31,6 +31,7 @@ struct DirectionalLight
   glm::mat4 viewMatrix;
   glm::mat4 projMatrix;
   glm::vec3 color;
+  GLuint shadowMap;
 };
 
 class Renderer
@@ -49,9 +50,13 @@ public:
   void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);
   void DrawSkybox();
 
+  void RecompileShaders() { m_shaderManager.Recompile(); }
+
 private:
   void CreateBuffers(int width, int height);
   void CreateShaders();
+
+  void UpdateShadowMap();
 
 private:
   ShaderManager m_shaderManager;
@@ -72,8 +77,11 @@ private:
   GLuint skybox;
   GLuint skyboxVBO;
   GLuint skyboxIBO;
-
   GLuint skyboxIrradiance;
+
+  GLuint DepthFBO;
+  DirectionalLight MyLonelyDirectionalLight;
+  bool IWouldLikeToUpdateMyShadowMapsPlease;
 
 public:
   Renderer(Renderer const&) = delete;

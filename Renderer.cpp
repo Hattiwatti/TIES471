@@ -99,6 +99,12 @@ void Renderer::Initialize(int width, int height)
   glGenBuffers(1, &skyboxVBO);
   glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+  glm::vec3 lightDir = glm::normalize(glm::vec3(1.7, -1, 1));
+
+  MyLonelyDirectionalLight.projMatrix = glm::ortho<float>(-15, 15, -15, 15, -10, 30);
+  MyLonelyDirectionalLight.viewMatrix = glm::lookAt(glm::vec3(0, 0, 0), lightDir, glm::vec3(0, 1, 0));
+  IWouldLikeToUpdateMyShadowMapsPlease = true;
 }
 
 void Renderer::CreateBuffers(int width, int height)
@@ -110,6 +116,21 @@ void Renderer::CreateBuffers(int width, int height)
   // workflow, first goal is to get Cook-Torrance working. 
   // The ultimate goal is to be able compare BRDF functions/workflows
   // so metallic might store glossiness etc.
+
+  // Depth Buffer and texture for shadow mapping
+  glGenFramebuffers(1, &DepthFBO);
+  glGenTextures(1, &MyLonelyDirectionalLight.shadowMap);
+  glBindTexture(GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 4096, 4096, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, DepthFBO);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap, 0);
+  glDrawBuffer(GL_NONE);
+  glReadBuffer(GL_NONE);
 
   glGenFramebuffers(1, &m_gbuffer.fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, m_gbuffer.fbo);
@@ -168,6 +189,8 @@ void Renderer::CreateBuffers(int width, int height)
   glBindBuffer(GL_UNIFORM_BUFFER, m_uniformBuffer);
   glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformBlock), &m_uniformBlock, GL_DYNAMIC_DRAW);
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniformBuffer);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::CreateShaders()
@@ -175,28 +198,39 @@ void Renderer::CreateShaders()
   m_shaderManager.AddShader("GeometryStageShader", "./Shaders/GeometryVS.glsl", "./Shaders/GeometryFS.glsl");
   m_shaderManager.AddShader("LightingStageShader", "./Shaders/LightingVS.glsl", "./Shaders/LightingFS.glsl");
   m_shaderManager.AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
+  m_shaderManager.AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
 }
 
 void Renderer::NewFrame()
 {
+  //IWouldLikeToUpdateMyShadowMapsPlease = true;
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glClearDepth(1.0f);
-  glClearColor(0, 0, 0, 1);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void Renderer::GeometryPass()
 {
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+  glEnableVertexAttribArray(3);
+
+  if (IWouldLikeToUpdateMyShadowMapsPlease)
+  {
+    // oh how lovely, right this way
+    UpdateShadowMap();
+    return;
+  }
+
   glBindFramebuffer(GL_FRAMEBUFFER, m_gbuffer.fbo);
-  glClearColor(0, 0, 0, 1);
-  glClearDepth(1.0f);
-  glClearStencil(0);
+
   glStencilMask(0xFF);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  // Mark fragments which contain data with stencil buffer
+  // Mark fragments which should be drawn
   glEnable(GL_STENCIL_TEST);
   glStencilFunc(GL_ALWAYS, 1, 0xFF);
   glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -206,11 +240,6 @@ void Renderer::GeometryPass()
   m_shaderManager.SetUniform1i("texture_Normal", 1);
   m_shaderManager.SetUniform1i("texture_Metal", 2);
   m_shaderManager.SetUniform1i("texture_Roughness", 3);
-
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-  glEnableVertexAttribArray(2);
-  glEnableVertexAttribArray(3);
 }
 
 void Renderer::LightingPass(int method)
@@ -219,9 +248,18 @@ void Renderer::LightingPass(int method)
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
 
+  if (IWouldLikeToUpdateMyShadowMapsPlease)
+  {
+    // We're done... I think
+    IWouldLikeToUpdateMyShadowMapsPlease = false;
+    glViewport(0, 0, 1280, 720);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(GL_NONE);
+    return;
+  }
+
   // Bind back-buffer for drawing, bind gbuffer textures
   // so the lighting shader can use them.
-
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
@@ -241,9 +279,12 @@ void Renderer::LightingPass(int method)
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedoMetallic);
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.roughness);
-
   glActiveTexture(GL_TEXTURE4);
   glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxIrradiance);
+  glActiveTexture(GL_TEXTURE5);
+  glBindTexture(GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap);
+
+  glm::mat4 LightMVP = MyLonelyDirectionalLight.projMatrix * MyLonelyDirectionalLight.viewMatrix;
 
   m_shaderManager.UseShader("LightingStageShader");
   m_shaderManager.SetUniform1i("texture_position", 0);
@@ -251,7 +292,9 @@ void Renderer::LightingPass(int method)
   m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
   m_shaderManager.SetUniform1i("texture_roughness", 3);
   m_shaderManager.SetUniform1i("skyboxTexture", 4);
+  m_shaderManager.SetUniform1i("shadowMap", 5);
   m_shaderManager.SetUniform1i("method", method);
+  m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
 
   // Only draw fragments which the geometry pass has used
   glStencilFunc(GL_EQUAL, 1, 0xFF);
@@ -310,4 +353,16 @@ void Renderer::UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfVie
   UniformBlock* pBlock = (UniformBlock*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(UniformBlock), GL_MAP_WRITE_BIT);
   *pBlock = m_uniformBlock;
   glUnmapBuffer(GL_UNIFORM_BUFFER);
+}
+
+void Renderer::UpdateShadowMap()
+{
+  glViewport(0, 0, 4096, 4096);
+  glBindFramebuffer(GL_FRAMEBUFFER, DepthFBO);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  glm::mat4 LightMVP = MyLonelyDirectionalLight.projMatrix * MyLonelyDirectionalLight.viewMatrix;
+
+  m_shaderManager.UseShader("ShadowMapShader");
+  m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
 }

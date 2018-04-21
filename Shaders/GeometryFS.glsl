@@ -23,7 +23,7 @@ void main()
   vec3 bump = 2*texture(texture_Normal, VertexIn.texCoord).rgb - vec3(1.0);
 
 	gPosition = VertexIn.position;
-  gNormal = normalize(VertexIn.TBN * bump);//VertexIn.normal;
+  gNormal = normalize(VertexIn.TBN * bump); //VertexIn.normal;
 	gAlbedoMetal.rgb = texture(texture_Diffuse, VertexIn.texCoord).rgb;
 	gAlbedoMetal.a = texture(texture_Metal, VertexIn.texCoord).r;
 	gRoughness.r = texture(texture_Roughness, VertexIn.texCoord).r;

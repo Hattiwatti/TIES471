@@ -21,33 +21,26 @@
 static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI = false;
+static       bool       g_hasFocus = true;
 
 static       int        g_method = 0;
 
-static const char*      methods = "Final\0Position\0Normal\0Diffuse\0Metallic\0Roughness\0Irradiance\0";
+static const char*      methods = "Final\0Position\0Normal\0Diffuse\0Metallic\0Roughness\0Irradiance\0ShadowMap\0";
 
 static void errorCallback(int error, const char* description)
 {
   printf("Error: %s\n", description);
 }
 
+static void windowFocusCallback(GLFWwindow* window, int focused)
+{
+  g_hasFocus = (focused == GLFW_TRUE);
+}
+
 static void windowSizeCallback(GLFWwindow* pWindow, int width, int height)
 {
   printf("glfwWindowSizeCallback %d %d\n", width, height);
 }
-
-static void drawUI()
-{
-  ImGui_ImplGlfwGL3_NewFrame();
-  ImGui::Begin("Test");
-  {
-    ImGui::Text("Hello world");
-    ImGui::Combo("Draw method", &g_method, methods);
-  }ImGui::End();
-  ImGui::Render();
-  ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
   if (key == GLFW_KEY_E && action == GLFW_PRESS)
@@ -71,6 +64,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  glfwSetWindowFocusCallback(window, windowFocusCallback);
   glfwSetWindowSizeCallback(window, windowSizeCallback);
   glfwSetInputMode(window, GLFW_CURSOR, g_showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
   glfwMakeContextCurrent(window);
@@ -112,25 +106,26 @@ int main(int argc, char* argv[])
   {
     glfwPollEvents();
 
-    double dt = glfwGetTime() - lastFrame;;
+    double dt = glfwGetTime() - lastFrame;
     lastFrame = glfwGetTime();
 
-    if (glfwGetKey(window, GLFW_KEY_INSERT) == GLFW_PRESS)
-    {
-      g_showUI = !g_showUI;
-      glfwSetInputMode(window, GLFW_CURSOR, g_showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-    }
-
-    double newMouseX = 0, newMouseY = 0;
-    glfwGetCursorPos(window, &newMouseX, &newMouseY);
-    if(!g_showUI)
-      camera.HandleMouseRotation(dt, newMouseX - mouseX, newMouseY - mouseY);
-    mouseX = newMouseX; 
-    mouseY = newMouseY;
 
     // Update camera input and send transform and field of view
     // to renderer so matrices can be updated.
-    camera.Update(dt);
+
+    if (g_hasFocus)
+    {
+      if (GetAsyncKeyState(VK_INSERT) & 0x8000)
+      {
+        g_showUI = !g_showUI;
+        glfwSetInputMode(window, GLFW_CURSOR, g_showUI ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+        while (GetAsyncKeyState(VK_INSERT) & 0x8000)
+          Sleep(100);
+      }
+      camera.Update(dt);
+    }
+
+
     renderer.UpdateMatrices(camera.GetTransform(), camera.GetFov());
 
     // Rendering passes
@@ -146,8 +141,19 @@ int main(int argc, char* argv[])
       //lightManager.DrawLights()
     }
 
-    if(g_showUI)
-      drawUI();
+    if (g_showUI)
+    {
+      ImGui_ImplGlfwGL3_NewFrame();
+      ImGui::Begin("Test");
+      {
+        ImGui::Text("Hello world");
+        ImGui::Combo("Draw method", &g_method, methods);
+        if (ImGui::Button("Recompile shaders"))
+          renderer.RecompileShaders();
+      }ImGui::End();
+      ImGui::Render();
+      ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 
     glfwSwapBuffers(window);
   }

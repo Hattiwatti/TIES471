@@ -15,9 +15,16 @@ uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_albedoMetal;
 uniform sampler2D texture_roughness;
+uniform sampler2D shadowMap;
 uniform samplerCube skyboxTexture;
 
+uniform mat4 LightMVP;
 uniform int method;
+
+const mat4 shadowBiasMatrix = mat4(vec4(0.5, 0, 0, 0),
+  vec4(0, 0.5, 0, 0),
+  vec4(0, 0, 0.5, 0),
+  vec4(0.5, 0.5, 0.5, 1.0));
 
 const vec3 globalLight = normalize(vec3(1.7, -1, 1));
 const vec3 globalLightColor = vec3(0.5, 0.5, 0.5);
@@ -90,6 +97,10 @@ vec3 FSchlick(vec3 h, vec3 v, vec3 F0)
 
 vec3 CookTorranceBRDF(vec3 fragPos, vec3 fragNormal, vec3 albeido, float metalness, float roughness)
 {
+  vec4 fragLightProj = shadowBiasMatrix * LightMVP * vec4(fragPos, 1);
+  float shadowDepth = texture(shadowMap, fragLightProj.xy).z;
+  float fragDepth = fragLightProj.z;
+
   float a = roughness * roughness;
   
   vec3 lightDir = normalize(-globalLight);
@@ -98,9 +109,14 @@ vec3 CookTorranceBRDF(vec3 fragPos, vec3 fragNormal, vec3 albeido, float metalne
 
   float dotNL = dot(fragNormal, lightDir);
   if (dotNL < 0)
-  {
     return albeido * vec3(0.1);
+
+  if (method == 7)
+  {
+    if(fragDepth > (shadowDepth+0.01))
+      return albeido * vec3(0.1);
   }
+
 
   float dotNV = dot(fragNormal, viewDir);
   float IOR = 1.5;
@@ -136,7 +152,7 @@ void main()
   // Debug switches
   switch (method)
   {
-  case 0: case 6:
+  case 0: case 6: case 7:
     //FragColor = vec4(globalLightPass(fragDiffuseMetalness.rgb, fragPosition, fragNormal), 1.0);
     FragColor = vec4(CookTorranceBRDF(fragPosition, fragNormal, fragDiffuseMetalness.rgb, fragDiffuseMetalness.a, fragRoughness), 1.0);
     break;

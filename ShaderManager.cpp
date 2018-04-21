@@ -72,7 +72,6 @@ static GLint compileShaderProgram(const char* vertexShaderPath, const char* frag
   return shaderProgram;
 }
 
-
 ShaderManager::ShaderManager() :
   m_activeShader(0)
 {
@@ -88,6 +87,7 @@ void ShaderManager::AddShader(std::string const& name, const char* sVertexFile, 
 {
   GLuint programID = compileShaderProgram(sVertexFile, sFragmentFile);
   m_shaderPrograms.insert({ name, programID });
+  m_shaderFiles.emplace_back(name, sVertexFile, sFragmentFile);
 }
 
 void ShaderManager::UseShader(std::string const& name)
@@ -106,12 +106,40 @@ void ShaderManager::UseShader(std::string const& name)
 
 void ShaderManager::SetUniform1i(const char* uniformName, int value)
 {
+  GLuint uniformLocation = GetUniformLocation(uniformName);
+  glUniform1i(uniformLocation, value);
+}
+
+void ShaderManager::SetUniformMatrix(const char* uniformName, glm::mat4 const& value)
+{
+  GLuint uniformLocation = GetUniformLocation(uniformName);
+  glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &value[0][0]);
+}
+
+void ShaderManager::Recompile()
+{
+  glUseProgram(GL_NONE);
+  m_activeShader = 0;
+  m_activeName = "";
+
+  for (auto& shader : m_shaderPrograms)
+    glDeleteProgram(shader.second);
+
+  m_shaderPrograms.clear();
+
+  for (auto& file : m_shaderFiles)
+  {
+    GLuint programID = compileShaderProgram(file.vertexFile.c_str(), file.fragmentFile.c_str());
+    m_shaderPrograms.insert({ file.name, programID });
+  }
+}
+
+GLuint ShaderManager::GetUniformLocation(const char* uniformName)
+{
   GLuint uniformLocation = glGetUniformLocation(m_activeShader, uniformName);
   if (uniformLocation == -1)
   {
     std::cerr << "Uniform \"" << uniformName << "\" does not exist in " << m_activeName << std::endl;
     abort();
   }
-
-  glUniform1i(uniformLocation, value);
 }
