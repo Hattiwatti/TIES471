@@ -40,7 +40,7 @@ public:
   Renderer();
   ~Renderer();
 
-  void Initialize(int width, int height);
+  void Initialize(glm::vec2 const& initialSize);
 
   void NewFrame();
   void GeometryPass();
@@ -71,8 +71,7 @@ private:
   glm::mat4 m_projMatrix;
   glm::vec3 m_viewPos;
   float m_fieldOfView;
-  int m_screenWidth;
-  int m_screenHeight;
+  glm::vec2 m_WindowSize;
 
   GLuint skybox;
   GLuint skyboxVBO;

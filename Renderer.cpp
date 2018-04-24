@@ -56,13 +56,12 @@ Renderer::~Renderer()
 
 }
 
-void Renderer::Initialize(int width, int height)
+void Renderer::Initialize(glm::vec2 const& initialSize)
 {
-  m_screenWidth = width;
-  m_screenHeight = height;
+  m_WindowSize = initialSize;
 
-  m_projMatrix = glm::perspective(m_fieldOfView, (float)width / (float)height, 0.1f, 10000.f);
-  CreateBuffers(width, height);
+  m_projMatrix = glm::perspective(m_fieldOfView, initialSize.x/initialSize.y, 0.1f, 10000.f);
+  CreateBuffers(initialSize.x, initialSize.y);
   CreateShaders();
 
   skybox = SOIL_load_OGL_cubemap("./Resources/Textures/miramar/miramar_lf.tga",
@@ -203,7 +202,6 @@ void Renderer::CreateShaders()
 
 void Renderer::NewFrame()
 {
-  //IWouldLikeToUpdateMyShadowMapsPlease = true;
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
 
@@ -311,7 +309,7 @@ void Renderer::LightingPass(int method)
   DrawSkybox();
 }
 
-// Probably obsolete
+// Obsolete for now. Implement HDR buffer 
 void Renderer::Present()
 {
   glDisableVertexAttribArray(1);
@@ -339,7 +337,7 @@ void Renderer::UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfVie
   if (m_fieldOfView != fieldOfView)
   {
     m_fieldOfView = fieldOfView;
-    m_projMatrix = glm::perspective(m_fieldOfView, m_screenWidth / (float)m_screenHeight, 0.1f, 10000.f);
+    m_projMatrix = glm::perspective(m_fieldOfView, m_WindowSize.x/m_WindowSize.y, 0.1f, 10000.f);
   }
 
   m_viewPos = glm::vec3(cameraTransform[3]);
