@@ -46,6 +46,7 @@ bool Application::Initialize()
   if (!glfwInit())
   {
     std::cerr << "Failed to initialize GLFW" << std::endl;
+    abort();
     return false;
   }
 
@@ -53,6 +54,7 @@ bool Application::Initialize()
   if (!m_pWindow)
   {
     std::cerr << "Failed to create a window" << std::endl;
+    abort();
     return false;
   }
 
@@ -69,6 +71,7 @@ bool Application::Initialize()
   {
     std::cerr << "Failed to initialize GLEW" << std::endl;
     printf("Error: %s\n", glewGetErrorString(err));
+    abort();
     return false;
   }
 
@@ -123,7 +126,22 @@ void Application::Run()
       ImGui::Begin("Test");
       {
         ImGui::Text("Hello world");
-        ImGui::Combo("Draw method", &g_method, methods, 8);
+
+        ImGui::Text("Draw method");
+        ImGui::Combo("##Method", &g_method, methods, 8);
+
+        DebugUniformBlock& debug = m_pRenderer->GetDebugStruct();
+        ImGui::Text("Albeido");
+        ImGui::InputFloat("##Albeido", &debug.AlbeidoMultiplier, 0.01f, 0.01f, 2);
+        ImGui::Text("Metallic");
+        ImGui::InputFloat("##Metallic", &debug.MetallicMultiplier, 0.01f, 0.01f, 2);
+        ImGui::Text("Roughness");
+        ImGui::InputFloat("##Roughness", &debug.RoughnessMultiplier, 0.01f, 0.01f, 2);
+
+        debug.AlbeidoMultiplier = max(0, debug.AlbeidoMultiplier);
+        debug.MetallicMultiplier = max(0, debug.MetallicMultiplier);
+        debug.RoughnessMultiplier = max(0, debug.RoughnessMultiplier);
+
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
       }ImGui::End();

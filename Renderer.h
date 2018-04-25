@@ -19,10 +19,19 @@ struct GBuffer
   GLuint roughness;
 };
 
+struct DebugUniformBlock
+{
+  float AlbeidoMultiplier{ 1.0f };
+  float MetallicMultiplier{ 1.0f };
+  float RoughnessMultiplier{ 1.0f };
+  float Pad001;
+};
+
 struct UniformBlock
 {
   glm::mat4 modelViewProj;
   glm::vec3 cameraPosition;
+  DebugUniformBlock debugBlock;
 };
 
 // Use a struct for now
@@ -51,6 +60,8 @@ public:
   void DrawSkybox();
 
   void RecompileShaders() { m_shaderManager.Recompile(); }
+
+  DebugUniformBlock& GetDebugStruct() { return m_uniformBlock.debugBlock; }
 
 private:
   void CreateBuffers(int width, int height);

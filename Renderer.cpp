@@ -218,7 +218,6 @@ void Renderer::GeometryPass()
 
   if (IWouldLikeToUpdateMyShadowMapsPlease)
   {
-    // oh how lovely, right this way
     UpdateShadowMap();
     return;
   }
@@ -248,7 +247,6 @@ void Renderer::LightingPass(int method)
 
   if (IWouldLikeToUpdateMyShadowMapsPlease)
   {
-    // We're done... I think
     IWouldLikeToUpdateMyShadowMapsPlease = false;
     glViewport(0, 0, 1280, 720);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

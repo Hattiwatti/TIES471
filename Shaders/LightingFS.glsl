@@ -7,6 +7,9 @@ layout(std140) uniform ViewBlock
 {
   mat4 ModelViewProj;
   vec3 CameraPos;
+  float AlbeidoMultiplier;
+  float MetallicMultiplier;
+  float RoughnessMultiplier;
 };
 
 in vec2 texCoord;
@@ -154,7 +157,11 @@ void main()
   {
   case 0: case 6: case 7:
     //FragColor = vec4(globalLightPass(fragDiffuseMetalness.rgb, fragPosition, fragNormal), 1.0);
-    FragColor = vec4(CookTorranceBRDF(fragPosition, fragNormal, fragDiffuseMetalness.rgb, fragDiffuseMetalness.a, fragRoughness), 1.0);
+    FragColor = vec4( CookTorranceBRDF(fragPosition, 
+                                       fragNormal, 
+                                       fragDiffuseMetalness.rgb * AlbeidoMultiplier,
+                                       fragDiffuseMetalness.a * MetallicMultiplier, 
+                                       fragRoughness * RoughnessMultiplier), 1.0);
     break;
   case 1:
     FragColor = vec4(fragPosition, 1.0);
