@@ -101,9 +101,9 @@ void Renderer::Initialize(glm::vec2 const& initialSize)
 
   glm::vec3 lightDir = glm::normalize(glm::vec3(1.7, -1, 1));
 
-  MyLonelyDirectionalLight.projMatrix = glm::ortho<float>(-15, 15, -15, 15, -10, 30);
-  MyLonelyDirectionalLight.viewMatrix = glm::lookAt(glm::vec3(0, 0, 0), lightDir, glm::vec3(0, 1, 0));
-  IWouldLikeToUpdateMyShadowMapsPlease = true;
+  m_DirectionalLight.projMatrix = glm::ortho<float>(-15, 15, -15, 15, -30, 30);
+  m_DirectionalLight.viewMatrix = glm::lookAt(glm::vec3(0, 0, 0), lightDir, glm::vec3(0, 1, 0));
+  m_UpdateShadowMaps = true;
 }
 
 void Renderer::CreateBuffers(int width, int height)
@@ -118,8 +118,8 @@ void Renderer::CreateBuffers(int width, int height)
 
   // Depth Buffer and texture for shadow mapping
   glGenFramebuffers(1, &DepthFBO);
-  glGenTextures(1, &MyLonelyDirectionalLight.shadowMap);
-  glBindTexture(GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap);
+  glGenTextures(1, &m_DirectionalLight.shadowMap);
+  glBindTexture(GL_TEXTURE_2D, m_DirectionalLight.shadowMap);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 4096, 4096, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -127,7 +127,7 @@ void Renderer::CreateBuffers(int width, int height)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   glBindFramebuffer(GL_FRAMEBUFFER, DepthFBO);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_DirectionalLight.shadowMap, 0);
   glDrawBuffer(GL_NONE);
   glReadBuffer(GL_NONE);
 
@@ -216,7 +216,7 @@ void Renderer::GeometryPass()
   glEnableVertexAttribArray(2);
   glEnableVertexAttribArray(3);
 
-  if (IWouldLikeToUpdateMyShadowMapsPlease)
+  if (m_UpdateShadowMaps)
   {
     UpdateShadowMap();
     return;
@@ -245,9 +245,9 @@ void Renderer::LightingPass(int method)
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
 
-  if (IWouldLikeToUpdateMyShadowMapsPlease)
+  if (m_UpdateShadowMaps)
   {
-    IWouldLikeToUpdateMyShadowMapsPlease = false;
+    m_UpdateShadowMaps = false;
     glViewport(0, 0, 1280, 720);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(GL_NONE);
@@ -278,9 +278,9 @@ void Renderer::LightingPass(int method)
   glActiveTexture(GL_TEXTURE4);
   glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxIrradiance);
   glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_2D, MyLonelyDirectionalLight.shadowMap);
+  glBindTexture(GL_TEXTURE_2D, m_DirectionalLight.shadowMap);
 
-  glm::mat4 LightMVP = MyLonelyDirectionalLight.projMatrix * MyLonelyDirectionalLight.viewMatrix;
+  glm::mat4 LightMVP = m_DirectionalLight.projMatrix * m_DirectionalLight.viewMatrix;
 
   m_shaderManager.UseShader("LightingStageShader");
   m_shaderManager.SetUniform1i("texture_position", 0);
@@ -357,7 +357,7 @@ void Renderer::UpdateShadowMap()
   glBindFramebuffer(GL_FRAMEBUFFER, DepthFBO);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  glm::mat4 LightMVP = MyLonelyDirectionalLight.projMatrix * MyLonelyDirectionalLight.viewMatrix;
+  glm::mat4 LightMVP = m_DirectionalLight.projMatrix * m_DirectionalLight.viewMatrix;
 
   m_shaderManager.UseShader("ShadowMapShader");
   m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);

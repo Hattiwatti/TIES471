@@ -90,8 +90,8 @@ private:
   GLuint skyboxIrradiance;
 
   GLuint DepthFBO;
-  DirectionalLight MyLonelyDirectionalLight;
-  bool IWouldLikeToUpdateMyShadowMapsPlease;
+  DirectionalLight m_DirectionalLight;
+  bool m_UpdateShadowMaps;
 
 public:
   Renderer(Renderer const&) = delete;
