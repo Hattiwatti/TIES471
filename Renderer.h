@@ -53,7 +53,7 @@ public:
 
   void NewFrame();
   void GeometryPass();
-  void LightingPass(int method);
+  void LightingPass(int brdf, int debug);
   void Present();
 
   void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);

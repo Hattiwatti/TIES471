@@ -8,8 +8,6 @@ public:
   Light();
   ~Light();
 
-
-
 private:
   glm::mat4 m_projection;
   glm::mat4 m_view;

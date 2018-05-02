@@ -239,7 +239,7 @@ void Renderer::GeometryPass()
   m_shaderManager.SetUniform1i("texture_Roughness", 3);
 }
 
-void Renderer::LightingPass(int method)
+void Renderer::LightingPass(int brdf, int debug)
 {
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
@@ -287,9 +287,10 @@ void Renderer::LightingPass(int method)
   m_shaderManager.SetUniform1i("texture_normal", 1);
   m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
   m_shaderManager.SetUniform1i("texture_roughness", 3);
-  m_shaderManager.SetUniform1i("skyboxTexture", 4);
+  //m_shaderManager.SetUniform1i("skyboxTexture", 4);
   m_shaderManager.SetUniform1i("shadowMap", 5);
-  m_shaderManager.SetUniform1i("method", method);
+  m_shaderManager.SetUniform1i("method", debug);
+  m_shaderManager.SetUniform1i("brdfMethod", brdf);
   m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
 
   // Only draw fragments which the geometry pass has used

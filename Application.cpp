@@ -17,10 +17,14 @@ static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI = true;
 static       bool       g_hasFocus = true;
-static       int        g_method = 0;
+static       int        g_debugMode = 0;
+static       int        g_brdfMethod = 1;
 
-static const char*     methods[] =
+static const char*     debugModes[] =
 { "Final", "Position", "Normal", "Diffuse", "Metallic", "Roughness", "Irradiance", "Shadowmap" };
+
+static const char*     brdfMethods[] =
+{ "Blinn-Phong", "Cook-Torrance" };
 
 Application::Application() :
   m_LastFrameTime(0),
@@ -117,7 +121,7 @@ void Application::Run()
     m_pRenderer->GeometryPass();
     m_pModelManager->Draw();
 
-    m_pRenderer->LightingPass(g_method);
+    m_pRenderer->LightingPass(g_brdfMethod, g_debugMode);
     //m_pRenderer->Present();
 
     if (g_showUI)
@@ -127,8 +131,11 @@ void Application::Run()
       {
         ImGui::Text("Hello world");
 
-        ImGui::Text("Draw method");
-        ImGui::Combo("##Method", &g_method, methods, 8);
+        ImGui::Text("Debug mode");
+        ImGui::Combo("##debug", &g_debugMode, debugModes, 8);
+
+        ImGui::Text("BRDF Methods");
+        ImGui::Combo("##BRDFMethod", &g_brdfMethod, brdfMethods, 2);
 
         DebugUniformBlock& debug = m_pRenderer->GetDebugStruct();
         ImGui::Text("Albeido");
@@ -144,6 +151,8 @@ void Application::Run()
 
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
+
+        ImGui::Text("Frame time: %f", m_dtFrameTime);
       }ImGui::End();
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
