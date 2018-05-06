@@ -30,3 +30,36 @@ map_Bump Textures\greasy-pan-2\greasy-pan-2-normal.png
 map_Pm Textures\greasy-pan-2\greasy-pan-2-metal.png
 map_Kd Textures\greasy-pan-2\greasy-pan-2-albedo.png
 map_Pr Textures\greasy-pan-2\greasy-pan-2-roughness.png
+
+newmtl FullMetallic
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 0.00
+map_Bump Textures\rustediron-streaks_normal.png
+map_Pm Textures\custom\White.png
+map_Kd Textures\custom\Orange.png
+map_Pr Textures\custom\Black.png
+
+newmtl FullRoughness
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 0.00
+map_Bump Textures\rustediron-streaks_normal.png
+map_Pm Textures\custom\Black.png
+map_Kd Textures\custom\Orange.png
+map_Pr Textures\custom\White.png
+
+newmtl FullBoth
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 0.00
+map_Bump Textures\rustediron-streaks_normal.png
+map_Pm Textures\custom\White.png
+map_Kd Textures\custom\Orange.png
+map_Pr Textures\custom\White.png

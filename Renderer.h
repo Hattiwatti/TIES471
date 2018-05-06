@@ -69,6 +69,9 @@ private:
 
   void UpdateShadowMap();
 
+  void DrawIrradiance(int debugMethod);
+  void DrawLights(int brdfMethod);
+
 private:
   ShaderManager m_shaderManager;
 

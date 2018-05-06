@@ -7,6 +7,7 @@ public:
   ~LightManager();
 
 
+
 private:
 
 public:

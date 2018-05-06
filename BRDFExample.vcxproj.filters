@@ -127,5 +127,11 @@
     <None Include="Shaders\SkyboxVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
+    <None Include="Shaders\IrradianceFS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\IrradianceVS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

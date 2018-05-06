@@ -196,6 +196,7 @@ void Renderer::CreateShaders()
 {
   m_shaderManager.AddShader("GeometryStageShader", "./Shaders/GeometryVS.glsl", "./Shaders/GeometryFS.glsl");
   m_shaderManager.AddShader("LightingStageShader", "./Shaders/LightingVS.glsl", "./Shaders/LightingFS.glsl");
+  m_shaderManager.AddShader("IrradianceShader", "./Shaders/IrradianceVS.glsl", "./Shaders/IrradianceFS.glsl");
   m_shaderManager.AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
   m_shaderManager.AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
 }
@@ -280,27 +281,17 @@ void Renderer::LightingPass(int brdf, int debug)
   glActiveTexture(GL_TEXTURE5);
   glBindTexture(GL_TEXTURE_2D, m_DirectionalLight.shadowMap);
 
-  glm::mat4 LightMVP = m_DirectionalLight.projMatrix * m_DirectionalLight.viewMatrix;
-
-  m_shaderManager.UseShader("LightingStageShader");
-  m_shaderManager.SetUniform1i("texture_position", 0);
-  m_shaderManager.SetUniform1i("texture_normal", 1);
-  m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
-  m_shaderManager.SetUniform1i("texture_roughness", 3);
-  //m_shaderManager.SetUniform1i("skyboxTexture", 4);
-  m_shaderManager.SetUniform1i("shadowMap", 5);
-  m_shaderManager.SetUniform1i("method", debug);
-  m_shaderManager.SetUniform1i("brdfMethod", brdf);
-  m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
-
   // Only draw fragments which the geometry pass has used
   glStencilFunc(GL_EQUAL, 1, 0xFF);
   glStencilMask(0);
 
-  // Draw full screen quad to evaluate gbuffer and draw final image.
-  // Optionally implement a light manager and draw lighting volumes
-  // so only fragments illuminated by the lights are processed
-  glDrawArrays(GL_QUADS, 0, 4);
+  // Draw ambient irradiance from skybox
+ // glDisable(GL_DEPTH_TEST);
+  glDepthFunc(GL_ALWAYS);
+  DrawIrradiance(debug);
+  if(debug == 0)
+    DrawLights(brdf);
+  glDepthFunc(GL_LEQUAL);
 
   // Draw the skybox after everything else has been drawn
   glDisable(GL_STENCIL_TEST);
@@ -362,4 +353,36 @@ void Renderer::UpdateShadowMap()
 
   m_shaderManager.UseShader("ShadowMapShader");
   m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
+}
+
+void Renderer::DrawIrradiance(int debugMethod)
+{
+  m_shaderManager.UseShader("IrradianceShader");
+  m_shaderManager.SetUniform1i("texture_position", 0);
+  m_shaderManager.SetUniform1i("texture_normal", 1);
+  m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
+  m_shaderManager.SetUniform1i("texture_roughness", 3);
+  m_shaderManager.SetUniform1i("skyboxTexture", 4);
+  m_shaderManager.SetUniform1i("method", debugMethod);
+
+  glDrawArrays(GL_QUADS, 0, 4);
+}
+
+void Renderer::DrawLights(int brdfMethod)
+{
+  glm::mat4 LightMVP = m_DirectionalLight.projMatrix * m_DirectionalLight.viewMatrix;
+
+  m_shaderManager.UseShader("LightingStageShader");
+  m_shaderManager.SetUniform1i("texture_position", 0);
+  m_shaderManager.SetUniform1i("texture_normal", 1);
+  m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
+  m_shaderManager.SetUniform1i("texture_roughness", 3);
+  m_shaderManager.SetUniform1i("shadowMap", 5);
+  m_shaderManager.SetUniform1i("brdfMethod", brdfMethod);
+  m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE);
+  glDrawArrays(GL_QUADS, 0, 4);
+  glDisable(GL_BLEND);
 }

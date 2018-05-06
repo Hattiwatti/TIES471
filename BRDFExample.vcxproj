@@ -153,6 +153,8 @@
   <ItemGroup>
     <None Include="Shaders\GeometryFS.glsl" />
     <None Include="Shaders\GeometryVS.glsl" />
+    <None Include="Shaders\IrradianceFS.glsl" />
+    <None Include="Shaders\IrradianceVS.glsl" />
     <None Include="Shaders\LightingFS.glsl" />
     <None Include="Shaders\LightingVS.glsl" />
     <None Include="Shaders\SkyboxFS.glsl" />

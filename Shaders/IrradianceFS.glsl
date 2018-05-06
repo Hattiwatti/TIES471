@@ -1,7 +1,8 @@
 #version 400 core
 #define M_PI 3.1415926535897932384626433832795
+#define EPSILON 0.00001;
 
-layout (location = 0) out vec3 FragColor;
+layout(location = 0) out vec4 FragColor;
 
 layout(std140) uniform ViewBlock
 {
@@ -18,86 +19,164 @@ uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_albedoMetal;
 uniform sampler2D texture_roughness;
-uniform sampler2D shadowMap;
 uniform samplerCube skyboxTexture;
 
-uniform mat4 LightMVP;
 uniform int method;
+uniform int brdfMethod;
 
-//http://graphicrants.blogspot.fi/2013/08/specular-brdf-reference.html
-// NORMAL DISTRIBUTION FUNCTIONS
-
-float DBlinn(vec3 n, vec3 h, float a)
+float GGGX(vec3 N, vec3 V, vec3 H, float a)
 {
-  float a2 = a * a;
-  float dotNH = dot(n, h);
-  float exponent = 2/a2 - 2;
+  float dotVH = clamp(dot(V, H), 0.0, 1.0);
+  float dotVN = clamp(dot(V, N), 0.0, 1.0);
 
-  return 1 / (M_PI*a2) * pow(dotNH, exponent);
+  float chi = (dotVH / dotVN) > 0 ? 1 : 0;
+  float dotVH2 = dotVH * dotVH;
+  float tan2 = (1 - dotVH2) / dotVH2;
+
+  return(chi * 2) / (1 + sqrt(1 + a * a*tan2));
 }
 
-// GEOMETRIC SHADOWING
-float GImplicit(vec3 n, vec3 h, vec3 l, vec3 v)
+float GCookTorrance(vec3 N, vec3 V, vec3 L, vec3 H)
 {
-  float dotNV = dot(n, v);
-  float dotNL = dot(n, l);
-  return dotNV * dotNL;
+  float dotNV = dot(N, V);
+  float dotNH = dot(N, H);
+  float dotVH = dot(V, H);
+  float dotNL = dot(N, L);
+
+  float first = (2 * dotNH*dotNV) / dotVH;
+  float second = (2 * dotNH*dotNL) / dotVH;
+
+  return min(1, min(first, second));
 }
 
-// FRESNEL
-float FNone(vec3 h, vec3 v, float F0)
+vec3 FCookTorrance(vec3 V, vec3 H, vec3 F0)
 {
-  return F0;
+  vec3 rootF0 = sqrt(F0);
+  vec3 n = (vec3(1) + rootF0) / (vec3(1) - rootF0);
+
+  vec3 c = vec3(dot(V, H));
+  vec3 g = sqrt(n*n + c * c - vec3(1));
+
+  vec3 term1 = (g - c) / (g + c);
+  vec3 term2 = ((g + c)*c - vec3(1)) / ((g - c)*c + vec3(1));
+
+  return 0.5 * term1 * term1 * (vec3(1) + term2 * term2);
 }
 
-vec3 FSchlick(vec3 h, vec3 v, vec3 F0)
-{
-  float dotVH = dot(v, h);
-  return F0 + (vec3(1) - F0)*pow(1 - dotVH, 5);
+
+const vec4 magic = vec4(1111.1111, 3141.5926, 2718.2818, 0);
+float rand(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-vec3 CookTorranceBRDF(vec3 fragPos, vec3 fragNormal, vec3 albeido, float metalness, float roughness)
+vec3 GenerateSampleVector(float roughness, float i, float sampleCount)
 {
-  float a = roughness * roughness;
-  
-  vec3 lightDir = normalize(fragNormal);
+  float rand1 = rand(vec2(i, sampleCount));
+  float rand2 = rand(vec2(i*179, sampleCount));
+
+  float phi = atan((roughness*sqrt(rand1))/sqrt(1-rand1));
+  float theta = 2 * M_PI*rand2;
+
+  float x = cos(theta)*sin(phi);
+  float z = sin(theta)*sin(phi);
+  float y = cos(phi);
+
+  return vec3(x, y, z);
+}
+
+mat3 CalculateMatrix(vec3 up)
+{
+  vec3 first = vec3(up.y, up.x, 0);
+  vec3 second = normalize(cross(up, first));
+
+  return mat3(second, up, normalize(cross(second, up)));
+}
+
+const int SampleCount = 1;
+
+vec3 GatherSpecular(vec3 N, vec3 V, float roughness, vec3 F0, out vec3 ks)
+{
+  vec3 reflection = reflect(-V, N);
+  mat3 worldMatrix = CalculateMatrix(reflection);
+
+  float a = roughness;
+  float dotNV = clamp(dot(N, V), 0.0, 1.0);
+
+  vec3 radiance = vec3(0);
+  for (int i = 0; i < SampleCount; ++i)
+  {
+    vec3 sampleVector = reflection; // GenerateSampleVector(roughness, i, 10);
+    //sampleVector = normalize(worldMatrix * sampleVector);
+
+    vec3 H = normalize(sampleVector + V);
+    float cosT = clamp(dot(sampleVector, N), 0.0, 1.0);
+    float sinT = sqrt(1 - cosT * cosT);
+
+    float G = GGGX(N, V, H, a);//GCookTorrance(N, V, sampleVector, H);
+    vec3 F = FCookTorrance(V, H, F0);
+    float dotNH = max(0, min(1, dot(N, H)));
+    float denominator = clamp((4 * (dotNV * dotNH) + 0.005), 0.0, 1.0);
+
+    vec3 specularColor = texture(skyboxTexture, sampleVector).rgb;
+
+    ks += F;
+    radiance += (specularColor * G * F * sinT) / denominator;
+  }
+
+  ks = clamp(ks / SampleCount, 0.0, 1.0);
+  return clamp(radiance / SampleCount, 0.0, 1.0);
+}
+
+vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
+{
   vec3 viewDir = normalize(CameraPos - fragPos);
-  vec3 halfway = normalize(lightDir + viewDir);
+  vec3 irradiance = texture(skyboxTexture, fragNormal).rgb;
+  vec3 diffuse = fragAlbeido * irradiance;
 
-  float dotNL = 1.0;//dot(fragNormal, lightDir);
-  float dotNV = dot(fragNormal, viewDir);
   float IOR = 1.5;
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
-  F0 = mix(F0, albeido, metalness);
+  F0 = mix(F0, fragAlbeido, fragMetallic);
 
-  float D = DBlinn(fragNormal, halfway, a);
-  vec3 F = FSchlick(halfway, viewDir, F0);
-  float G = GImplicit(fragNormal, halfway, lightDir, viewDir);
+  vec3 ks = vec3(0);
+  vec3 specular = GatherSpecular(fragNormal, viewDir, fragRoughness, F0, ks);
+  vec3 kd = (vec3(1.0) - ks) * (1 - fragMetallic);
 
-  vec3 specular = (D*F*G) / (4 * dotNL*dotNV);
-  vec3 irradiance = texture(skyboxTexture, fragNormal).rgb;
-  vec3 diffuse = albeido * irradiance * 0.2;
-
-  return diffuse; //+ specular;
+  return kd * diffuse + specular;
 }
 
 void main()
 {
   vec3 fragPosition = texture(texture_position, texCoord).rgb;
   vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec4 fragDiffuseMetalness = texture(texture_albedoMetal, texCoord);
-  float fragRoughness = texture(texture_roughness, texCoord).r;
+  vec4 fragDiffuseMetallic = texture(texture_albedoMetal, texCoord);
+
+  vec3 fragAlbeido = fragDiffuseMetallic.rgb * AlbeidoMultiplier;
+  float fragMetallic = fragDiffuseMetallic.a * MetallicMultiplier;
+  float fragRoughness = texture(texture_roughness, texCoord).r * RoughnessMultiplier;
+
+  fragRoughness = clamp(fragRoughness - 0.001, 0.0, 1.0) + 0.001;
 
   // Debug switches
   switch (method)
   {
   case 0: case 6: case 7:
-    FragColor = CookTorranceBRDF(fragPosition,
-      fragNormal,
-      fragDiffuseMetalness.rgb * AlbeidoMultiplier,
-      fragDiffuseMetalness.a * MetallicMultiplier,
-      fragRoughness * RoughnessMultiplier);
+    FragColor = vec4(CalculateIrradiance(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0f);
+    break;
+  case 1:
+    FragColor = vec4(fragPosition, 1.0);
+    break;
+  case 2:
+    FragColor = vec4(fragNormal, 1.0);
+    break;
+  case 3:
+    FragColor = vec4(fragAlbeido, 1.0);
+    break;
+  case 4:
+    FragColor = vec4(fragMetallic, fragMetallic, fragMetallic, 1.0);
+    break;
+  case 5:
+    FragColor = vec4(fragRoughness, fragRoughness, fragRoughness, 1.0);
     break;
   }
 }

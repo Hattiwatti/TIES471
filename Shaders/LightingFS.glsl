@@ -179,11 +179,9 @@ vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fr
   float dotNL = dot(fragNormal, lightDir);
   dotNL = max(0, dotNL);
 
-  vec3 AmbientColor = vec3(0.1) * fragAlbeido;
   vec3 SpecularColor = vec3(0);
-
   if (dotNL == 0 || fragDepth > (shadowDepth + 0.01))
-    return AmbientColor;
+    return vec3(0);
 
   switch (brdfMethod)
   {
@@ -195,7 +193,7 @@ vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fr
     break;
   }
 
-  return AmbientColor + dotNL * fragAlbeido + SpecularColor;
+  return dotNL * fragAlbeido + SpecularColor;
 }
 
 void main()
@@ -208,26 +206,5 @@ void main()
   float fragMetallic = fragDiffuseMetallic.a * MetallicMultiplier;
   float fragRoughness = texture(texture_roughness, texCoord).r * RoughnessMultiplier;
 
-  // Debug switches
-  switch (method)
-  {
-  case 0: case 6: case 7:
-    FragColor = vec4(CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0f);
-    break;
-  case 1:
-    FragColor = vec4(fragPosition, 1.0);
-    break;
-  case 2:
-    FragColor = vec4(fragNormal, 1.0);
-    break;
-  case 3:
-    FragColor = vec4(fragAlbeido, 1.0);
-    break;
-  case 4:
-    FragColor = vec4(fragMetallic, fragMetallic, fragMetallic, 1.0);
-    break;
-  case 5:
-    FragColor = vec4(fragRoughness, fragRoughness, fragRoughness, 1.0);
-    break;
-  }
+  FragColor = vec4(CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0);
 }

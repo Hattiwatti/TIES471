@@ -46,7 +46,7 @@ Material::Material(tinyobj::material_t const& material)
   if (!material.roughness_texname.empty())
   {
     std::string roughnessPath = "./Resources/" + material.roughness_texname;
-    m_roughnessTexture = SOIL_load_OGL_texture(roughnessPath.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB);
+    m_roughnessTexture = SOIL_load_OGL_texture(roughnessPath.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
     if (m_roughnessTexture == 0)
     {
       std::cerr << "Failed to load texture from file | ";
