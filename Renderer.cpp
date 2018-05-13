@@ -210,7 +210,7 @@ void Renderer::NewFrame()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::GeometryPass()
+void Renderer::GeometryPass(std::vector<Model*> const& models)
 {
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -238,6 +238,17 @@ void Renderer::GeometryPass()
   m_shaderManager.SetUniform1i("texture_Normal", 1);
   m_shaderManager.SetUniform1i("texture_Metal", 2);
   m_shaderManager.SetUniform1i("texture_Roughness", 3);
+
+
+  for (auto& model : m_models)
+  {
+    int materialIndex = model->GetMaterial();
+    if (materialIndex > -1)
+      m_materials[materialIndex]->Bind();
+
+    model->Draw();
+  }
+
 }
 
 void Renderer::LightingPass(int brdf, int debug)

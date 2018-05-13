@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include "Material.h"
+
 struct VertexData
 {
   glm::vec3 position;
@@ -28,10 +30,9 @@ public:
 
   Model(std::vector<VertexData> const& vertices,
         std::vector<GLuint> const& indices,
-        int materialIndex);
+        Material* pMaterial);
 
   void Draw();
-  int GetMaterial() { return m_material; }
 
 private:
   GLuint m_indexBuffer;
@@ -40,9 +41,10 @@ private:
   GLuint m_texCoordBuffer;
 
   int m_indexCount;
-  int m_material;
+  Material* m_pMaterial;
 
 public:
   Model(Model const&) = delete;
   void operator=(Model const&) = delete;
 };
+

@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include "ShaderManager.h"
+#include "Model.h"
 
 enum BRDFMethod
 {
@@ -29,7 +30,8 @@ struct DebugUniformBlock
 
 struct UniformBlock
 {
-  glm::mat4 modelViewProj;
+  glm::mat4 model;
+  glm::mat4 viewProj;
   glm::vec3 cameraPosition;
   DebugUniformBlock debugBlock;
 };
@@ -52,7 +54,7 @@ public:
   void Initialize(glm::vec2 const& initialSize);
 
   void NewFrame();
-  void GeometryPass();
+  void GeometryPass(std::vector<Model*> const&);
   void LightingPass(int brdf, int debug);
   void Present();
 

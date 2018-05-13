@@ -32,6 +32,9 @@ Model::Model( std::vector<VertexData> const& vertices,
 
 void Model::Draw()
 {
+  if (m_pMaterial != nullptr)
+    m_pMaterial->Bind();
+
   glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 

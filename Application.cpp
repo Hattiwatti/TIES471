@@ -119,9 +119,7 @@ void Application::Run()
 
     m_pRenderer->NewFrame();
 
-    m_pRenderer->GeometryPass();
-    m_pModelManager->Draw();
-
+    m_pRenderer->GeometryPass(m_pModelManager->GetModels());
     m_pRenderer->LightingPass(g_brdfMethod, g_debugMode);
 
     //m_pRenderer->Present();

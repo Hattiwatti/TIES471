@@ -128,16 +128,14 @@ void ModelManager::LoadObj(const char* sFilename)
   std::cout << "Created " << m_materials.size() << " materials" << std::endl;
 }
 
-void ModelManager::Draw()
+void ModelManager::CreateSphereGrid()
 {
+  glm::vec3 color(1.0f, 0.4f, 0.4f);
+  float metallic = 1.0f;
+  float roughness = 0.001f;
+  float IoR = 0.5f;
 
-  for (auto& model : m_models)
-  {
-    int materialIndex = model->GetMaterial();
-    if (materialIndex > -1)
-      m_materials[materialIndex]->Bind();
+  m_materials.emplace_back(color, metallic, roughness, IoR);
 
-    model->Draw();
-  }
 
 }

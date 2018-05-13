@@ -10,7 +10,9 @@ public:
   ~ModelManager();
 
   void LoadObj(const char* filename);
-  void Draw();
+  void CreateSphereGrid();
+
+  std::vector<Model*> const& GetModels() { return m_models; }
 
 private:
   std::vector<Model*> m_models;

@@ -2,7 +2,8 @@
 
 layout (std140) uniform ViewBlock
 {
-  mat4 ModelViewProj;
+  mat4 Model;
+  mat4 ViewProj;
   vec3 CameraPos;
 };
 
