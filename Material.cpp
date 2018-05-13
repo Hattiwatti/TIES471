@@ -72,25 +72,13 @@ Material::Material(tinyobj::material_t const& material)
   }
 }
 
-Material::Material(glm::vec3 const& color, float metallic, float roughness, float IOR)
+Material::Material(glm::vec4 const& color, float metallic, float roughness, float IOR)
 {
-  glGenTextures(1, &m_albeidoTexture);
-  glBindTexture(GL_TEXTURE_2D, m_albeidoTexture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, &color);
-
-  glm::vec3 metallicIoR = glm::vec3(metallic, IOR, 0);
-  glGenTextures(1, &m_metallicIoRTexture);
-  glBindTexture(GL_TEXTURE_2D, m_metallicIoRTexture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, &metallicIoR);
-
-  glGenTextures(1, &m_roughnessTexture);
-  glBindTexture(GL_TEXTURE_2D, m_roughnessTexture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_R, GL_FLOAT, &roughness);
-
-  glm::vec3 normal = glm::vec3(0, 0, 1);
-  glGenTextures(1, &m_normalTexture);
-  glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, &normal);
+  m_properties.color = color;
+  m_properties.metallic = metallic;
+  m_properties.roughness = roughness;
+  m_properties.IoR = IOR;
+  m_properties.useTextures = false;
 }
 
 void Material::Bind()

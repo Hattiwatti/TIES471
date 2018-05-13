@@ -38,7 +38,7 @@ void ModelManager::LoadObj(const char* sFilename)
 
   std::cout << "Parsing materials" << std::endl;
   for (auto& material : materials)
-    m_materials.push_back(new Material(material));
+    m_materials.push_back( std::make_shared<Material>(material) );
 
   std::cout << "Creating models..." << std::endl;
 
@@ -50,16 +50,25 @@ void ModelManager::LoadObj(const char* sFilename)
 
     size_t index_offset = 0;
     size_t indexCount = 0;
+
+    std::shared_ptr<Material> pMaterial = nullptr;
     int materialIndex = shape.mesh.material_ids[0];
+    if (materialIndex >= 0)
+      pMaterial = m_materials[materialIndex];
+
     for (unsigned char faceIndex : shape.mesh.num_face_vertices)
     {
       if (shape.mesh.material_ids[indexCount] != materialIndex)
       {
         //std::cout << shapeIndices.size() << " indices" << std::endl;
-        m_models.push_back(new Model(vertices, shapeIndices, m_materials[materialIndex]));
+        m_models.push_back(new Model(vertices, shapeIndices, pMaterial));
         shapeIndices.clear();
         vertices.clear();
         materialIndex = shape.mesh.material_ids[indexCount];
+
+        pMaterial.reset();
+        if (materialIndex >= 0)
+          pMaterial = m_materials[materialIndex];
       }
 
       tinyobj::index_t idx0 = shape.mesh.indices[index_offset + 0];
@@ -120,7 +129,7 @@ void ModelManager::LoadObj(const char* sFilename)
     }
 
     //std::cout << shapeIndices.size() << " indices" << std::endl;
-    m_models.push_back(new Model(vertices, shapeIndices, m_materials[materialIndex]));
+    m_models.push_back(new Model(vertices, shapeIndices, pMaterial));
   }
 
   std::cout << "Created " << m_models.size() << " models from " << sFilename << std::endl;
@@ -129,12 +138,25 @@ void ModelManager::LoadObj(const char* sFilename)
 
 void ModelManager::CreateSphereGrid()
 {
-  glm::vec3 color(1.0f, 0.4f, 0.4f);
-  float metallic = 1.0f;
-  float roughness = 0.001f;
+  glm::mat4 transform(1.0f);
+  transform[3][1] = 5.f;
+
+  glm::vec4 color(1.0f, 0.4f, 0.4f, 1.0f);
+  float metallic = 0.5f;
+  float roughness = 0.1f;
   float IoR = 0.5f;
 
+  LoadObj("./Resources/Sphere.obj");
+  Model* pSphere = m_models[m_models.size() - 1];
+  pSphere->SetMaterial(std::make_shared<Material>(color, metallic, roughness, IoR));
+  pSphere->SetTransform(transform);
 
+  for (int i = 0; i < 5; ++i)
+  {
+    transform[3][0] += 1.5f;
+    Model* newSphere = new Model(*pSphere);
+    newSphere->SetTransform(transform);
+    m_models.push_back(newSphere);
+  }
 
-  m_materials.push_back(new Material(color, metallic, roughness, IoR));
 }

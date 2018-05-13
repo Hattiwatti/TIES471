@@ -112,6 +112,18 @@ void ShaderManager::SetUniform1i(const char* uniformName, int value)
   glUniform1i(uniformLocation, value);
 }
 
+void ShaderManager::SetUniform1f(const char* uniformName, float value)
+{
+  GLuint uniformLocation = GetUniformLocation(uniformName);
+  glUniform1f(uniformLocation, value);
+}
+
+void ShaderManager::SetUniform3f(const char* uniformName, glm::vec3 const& value)
+{
+  GLuint uniformLocation = GetUniformLocation(uniformName);
+  glUniform3fv(uniformLocation, 1, &value[0]);
+}
+
 void ShaderManager::SetUniformMatrix(const char* uniformName, glm::mat4 const& value)
 {
   GLuint uniformLocation = GetUniformLocation(uniformName);

@@ -98,6 +98,8 @@ bool Application::Initialize()
   m_pRenderer->Initialize(g_initialSize);
   m_pModelManager->LoadObj("./Resources/SceneNew.obj");
 
+  m_pModelManager->CreateSphereGrid();
+
   return true;
 }
 
@@ -118,7 +120,6 @@ void Application::Run()
     m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
 
     m_pRenderer->NewFrame();
-
     m_pRenderer->GeometryPass(m_pModelManager->GetModels());
     m_pRenderer->LightingPass(g_brdfMethod, g_debugMode);
 
@@ -155,7 +156,7 @@ void Application::Run()
 
         ImGui::Dummy(ImVec2(10, 10));
         ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
-        ImGui::PlotLines("##FPS2", m_FPSBuffer, 99, 0, "Frame time in milliseconds", 0, 5, ImVec2(250, 100));
+        ImGui::PlotLines("##FPS2", m_FPSBuffer, 99, 0, "Frame time in milliseconds", 0, 2, ImVec2(250, 100));
 
         ImGui::Dummy(ImVec2(10, 10));
 

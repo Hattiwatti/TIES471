@@ -34,6 +34,8 @@ public:
   void UseShader(std::string const& name);
 
   void SetUniform1i(const char* uniformName, int value);
+  void SetUniform1f(const char* uniformName, float value);
+  void SetUniform3f(const char* uniformName, glm::vec3 const& value);
   void SetUniformMatrix(const char* uniformName, glm::mat4 const& value);
 
   void Recompile();

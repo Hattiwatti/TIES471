@@ -251,6 +251,16 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
 
   for (auto& model : models)
   {
+    MaterialProperties const& material = model->GetMaterial()->GetProperties();
+    m_shaderManager.SetUniform1i("useTextures", material.useTextures);
+
+    if (!material.useTextures)
+    {
+      m_shaderManager.SetUniform3f("color", material.color);
+      m_shaderManager.SetUniform1f("metallic", material.metallic);
+      m_shaderManager.SetUniform1f("roughness", material.roughness);
+    }
+
     m_shaderManager.SetUniformMatrix("Model", model->GetTransform());
     model->Draw();
   }
@@ -296,8 +306,10 @@ void Renderer::LightingPass(int brdf, int debug)
  // glDisable(GL_DEPTH_TEST);
   glDepthFunc(GL_ALWAYS);
   DrawIrradiance(debug);
+
   if(debug == 0)
     DrawLights(brdf);
+
   glDepthFunc(GL_LEQUAL);
 
   // Draw the skybox after everything else has been drawn

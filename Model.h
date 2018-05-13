@@ -1,6 +1,7 @@
 #pragma once
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <memory>
 #include <vector>
 
 #include "Material.h"
@@ -30,11 +31,14 @@ public:
 
   Model(std::vector<VertexData> const& vertices,
         std::vector<GLuint> const& indices,
-        Material* pMaterial);
+        std::shared_ptr<Material> pMaterial);
 
   void Draw();
 
   void SetTransform(glm::mat4 const& trans) { m_transform = trans; }
+  void SetMaterial(std::shared_ptr<Material> pMat) { m_pMaterial = pMat; }
+
+  Material* GetMaterial() { return m_pMaterial.get(); }
   glm::mat4 const& GetTransform() { return m_transform; }
 
 private:
@@ -44,12 +48,8 @@ private:
   GLuint m_texCoordBuffer;
 
   int m_indexCount;
-  Material* m_pMaterial;
+  std::shared_ptr<Material> m_pMaterial;
 
   glm::mat4 m_transform;
-
-public:
-  Model(Model const&) = delete;
-  void operator=(Model const&) = delete;
 };
 

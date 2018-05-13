@@ -18,13 +18,29 @@ uniform sampler2D texture_Normal;
 uniform sampler2D texture_Metal;
 uniform sampler2D texture_Roughness;
 
+uniform bool useTextures;
+uniform vec3 color;
+uniform float metallic;
+uniform float roughness;
+uniform float IOR;
+
 void main()
 {
-  vec3 bump = 2*texture(texture_Normal, VertexIn.texCoord).rgb - vec3(1.0);
+  gPosition = VertexIn.position;
 
-	gPosition = VertexIn.position;
-  gNormal = normalize(VertexIn.TBN * bump); //VertexIn.normal;
-	gAlbedoMetal.rgb = texture(texture_Diffuse, VertexIn.texCoord).rgb;
-	gAlbedoMetal.a = texture(texture_Metal, VertexIn.texCoord).r;
-	gRoughness.r = texture(texture_Roughness, VertexIn.texCoord).r;
+  if (useTextures)
+  {
+    vec3 bump = 2 * texture(texture_Normal, VertexIn.texCoord).rgb - vec3(1.0);
+
+    gNormal = normalize(VertexIn.TBN * bump);
+    gAlbedoMetal.rgb = texture(texture_Diffuse, VertexIn.texCoord).rgb;
+    gAlbedoMetal.a = texture(texture_Metal, VertexIn.texCoord).r;
+    gRoughness.r = texture(texture_Roughness, VertexIn.texCoord).r;
+  }
+  else
+  {
+    gNormal = normalize(VertexIn.TBN * vec3(0, 0, 1));
+    gAlbedoMetal = vec4(color, metallic);
+    gRoughness.r = roughness;
+  }
 }

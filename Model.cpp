@@ -16,7 +16,7 @@ Model::~Model()
 }
 
 Model::Model( std::vector<VertexData> const& vertices, 
-              std::vector<GLuint> const& indices, Material* pMaterial)
+              std::vector<GLuint> const& indices, std::shared_ptr<Material> pMaterial)
 {
   m_transform = glm::mat4(1.0f);
   m_pMaterial = pMaterial;
