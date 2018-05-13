@@ -133,5 +133,11 @@
     <None Include="Shaders\IrradianceVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
+    <None Include="Shaders\DepthVS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\DepthFS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

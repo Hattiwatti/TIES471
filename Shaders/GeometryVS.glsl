@@ -2,10 +2,11 @@
 
 layout (std140) uniform ViewBlock
 {
-  mat4 Model;
   mat4 ViewProj;
   vec3 CameraPos;
 };
+
+uniform mat4 Model;
 
 layout(location = 0)in vec3 position;
 layout(location = 1)in vec3 normal;
@@ -21,7 +22,7 @@ out VertexData {
 
 void main()
 {
-  gl_Position = ModelViewProj * vec4(position, 1.0);
+  gl_Position = ViewProj * Model * vec4(position, 1.0);
   VertexOut.position = position;
   VertexOut.normal = normalize(normal);//normalize(normalMatrix * normal);
   VertexOut.texCoord = texCoord;

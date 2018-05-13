@@ -30,7 +30,6 @@ struct DebugUniformBlock
 
 struct UniformBlock
 {
-  glm::mat4 model;
   glm::mat4 viewProj;
   glm::vec3 cameraPosition;
   DebugUniformBlock debugBlock;

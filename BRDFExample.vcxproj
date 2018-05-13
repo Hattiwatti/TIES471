@@ -151,6 +151,8 @@
     <ClInclude Include="ShaderManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\DepthFS.glsl" />
+    <None Include="Shaders\DepthVS.glsl" />
     <None Include="Shaders\GeometryFS.glsl" />
     <None Include="Shaders\GeometryVS.glsl" />
     <None Include="Shaders\IrradianceFS.glsl" />

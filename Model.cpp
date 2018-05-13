@@ -4,8 +4,8 @@ Model::Model() :
   m_indexBuffer(0),
   m_vertexBuffer(0),
   m_normalBuffer(0),
-  m_material(-1),
-  m_indexCount(0)
+  m_indexCount(0),
+  m_transform(glm::mat4(1.0f))
 {
 
 }
@@ -16,9 +16,10 @@ Model::~Model()
 }
 
 Model::Model( std::vector<VertexData> const& vertices, 
-              std::vector<GLuint> const& indices, int materialIndex)
+              std::vector<GLuint> const& indices, Material* pMaterial)
 {
-  m_material = materialIndex;
+  m_transform = glm::mat4(1.0f);
+  m_pMaterial = pMaterial;
   m_indexCount = indices.size();
 
   glGenBuffers(1, &m_indexBuffer);

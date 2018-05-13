@@ -34,6 +34,9 @@ public:
 
   void Draw();
 
+  void SetTransform(glm::mat4 const& trans) { m_transform = trans; }
+  glm::mat4 const& GetTransform() { return m_transform; }
+
 private:
   GLuint m_indexBuffer;
   GLuint m_normalBuffer;
@@ -42,6 +45,8 @@ private:
 
   int m_indexCount;
   Material* m_pMaterial;
+
+  glm::mat4 m_transform;
 
 public:
   Model(Model const&) = delete;

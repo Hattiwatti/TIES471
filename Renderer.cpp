@@ -220,7 +220,17 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
   if (m_UpdateShadowMaps)
   {
     UpdateShadowMap();
-    return;
+
+    for (auto& model : models)
+    {
+      m_shaderManager.SetUniformMatrix("Model", model->GetTransform());
+      model->Draw();
+    }
+
+    m_UpdateShadowMaps = false;
+    glViewport(0, 0, 1280, 720);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(GL_NONE);
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, m_gbuffer.fbo);
@@ -239,16 +249,11 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
   m_shaderManager.SetUniform1i("texture_Metal", 2);
   m_shaderManager.SetUniform1i("texture_Roughness", 3);
 
-
-  for (auto& model : m_models)
+  for (auto& model : models)
   {
-    int materialIndex = model->GetMaterial();
-    if (materialIndex > -1)
-      m_materials[materialIndex]->Bind();
-
+    m_shaderManager.SetUniformMatrix("Model", model->GetTransform());
     model->Draw();
   }
-
 }
 
 void Renderer::LightingPass(int brdf, int debug)
@@ -256,15 +261,6 @@ void Renderer::LightingPass(int brdf, int debug)
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
-
-  if (m_UpdateShadowMaps)
-  {
-    m_UpdateShadowMaps = false;
-    glViewport(0, 0, 1280, 720);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glUseProgram(GL_NONE);
-    return;
-  }
 
   // Bind back-buffer for drawing, bind gbuffer textures
   // so the lighting shader can use them.
@@ -344,7 +340,7 @@ void Renderer::UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfVie
   m_viewPos = glm::vec3(cameraTransform[3]);
   m_viewMatrix = glm::lookAt(m_viewPos, m_viewPos + glm::vec3(cameraTransform[2]), glm::vec3(0, 1, 0));
   
-  m_uniformBlock.modelViewProj = m_projMatrix * m_viewMatrix;
+  m_uniformBlock.viewProj = m_projMatrix * m_viewMatrix;
   m_uniformBlock.cameraPosition = m_viewPos;
 
   // Update shader uniform block

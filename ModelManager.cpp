@@ -36,6 +36,10 @@ void ModelManager::LoadObj(const char* sFilename)
     abort();
   }
 
+  std::cout << "Parsing materials" << std::endl;
+  for (auto& material : materials)
+    m_materials.push_back(new Material(material));
+
   std::cout << "Creating models..." << std::endl;
 
   for (tinyobj::shape_t& shape : shapes)
@@ -52,7 +56,7 @@ void ModelManager::LoadObj(const char* sFilename)
       if (shape.mesh.material_ids[indexCount] != materialIndex)
       {
         //std::cout << shapeIndices.size() << " indices" << std::endl;
-        m_models.emplace_back(new Model(vertices, shapeIndices, materialIndex));
+        m_models.push_back(new Model(vertices, shapeIndices, m_materials[materialIndex]));
         shapeIndices.clear();
         vertices.clear();
         materialIndex = shape.mesh.material_ids[indexCount];
@@ -116,14 +120,10 @@ void ModelManager::LoadObj(const char* sFilename)
     }
 
     //std::cout << shapeIndices.size() << " indices" << std::endl;
-    m_models.push_back(new Model(vertices, shapeIndices, materialIndex));
+    m_models.push_back(new Model(vertices, shapeIndices, m_materials[materialIndex]));
   }
 
   std::cout << "Created " << m_models.size() << " models from " << sFilename << std::endl;
-
-  std::cout << "Parsing materials" << std::endl;
-  for (auto& material : materials)
-    m_materials.push_back(new Material(material));
 
   std::cout << "Created " << m_materials.size() << " materials" << std::endl;
 }
@@ -135,7 +135,5 @@ void ModelManager::CreateSphereGrid()
   float roughness = 0.001f;
   float IoR = 0.5f;
 
-  m_materials.emplace_back(color, metallic, roughness, IoR);
-
-
+  m_materials.push_back(new Material(color, metallic, roughness, IoR));
 }
