@@ -86,8 +86,11 @@ ShaderManager::~ShaderManager()
 void ShaderManager::AddShader(std::string const& name, const char* sVertexFile, const char* sFragmentFile)
 {
   GLuint programID = compileShaderProgram(sVertexFile, sFragmentFile);
-  m_shaderPrograms.insert({ name, programID });
-  m_shaderFiles.emplace_back(name, sVertexFile, sFragmentFile);
+
+  Shader newShader(name, sVertexFile, sFragmentFile);
+  newShader.programId = programID;
+
+  m_shaderPrograms.insert({ name, newShader });
 }
 
 void ShaderManager::UseShader(std::string const& name)
@@ -99,9 +102,8 @@ void ShaderManager::UseShader(std::string const& name)
     abort();
   }
 
-  m_activeShader = result->second;
-  m_activeName = name;
-  glUseProgram(m_activeShader);
+  m_activeShader = &result->second;
+  glUseProgram(m_activeShader->programId);
 }
 
 void ShaderManager::SetUniform1i(const char* uniformName, int value)
@@ -119,27 +121,32 @@ void ShaderManager::SetUniformMatrix(const char* uniformName, glm::mat4 const& v
 void ShaderManager::Recompile()
 {
   glUseProgram(GL_NONE);
-  m_activeShader = 0;
-  m_activeName = "";
+  m_activeShader = nullptr;
 
-  for (auto& shader : m_shaderPrograms)
-    glDeleteProgram(shader.second);
-
-  m_shaderPrograms.clear();
-
-  for (auto& file : m_shaderFiles)
+  for (auto& entry : m_shaderPrograms)
   {
-    GLuint programID = compileShaderProgram(file.vertexFile.c_str(), file.fragmentFile.c_str());
-    m_shaderPrograms.insert({ file.name, programID });
+    Shader& shader = entry.second;
+    glDeleteProgram(shader.programId);
+
+    shader.programId = compileShaderProgram(shader.vertexFile.c_str(), shader.fragmentFile.c_str());
   }
 }
 
-GLuint ShaderManager::GetUniformLocation(const char* uniformName)
+GLuint ShaderManager::GetUniformLocation(std::string const& uniformName)
 {
-  GLuint uniformLocation = glGetUniformLocation(m_activeShader, uniformName);
-  if (uniformLocation == -1)
+  auto result = m_activeShader->uniformLocations.find(uniformName);
+  if (result == m_activeShader->uniformLocations.end())
   {
-    std::cerr << "Uniform \"" << uniformName << "\" does not exist in " << m_activeName << std::endl;
-    abort();
+    GLuint uniformLocation = glGetUniformLocation(m_activeShader->programId, uniformName.c_str());
+    if (uniformLocation == -1)
+    {
+      std::cerr << "Uniform \"" << uniformName << "\" does not exist in " << m_activeShader->name << std::endl;
+      abort();
+    }
+
+    m_activeShader->uniformLocations.emplace(uniformName, uniformLocation);
+    return uniformLocation;
   }
+
+  return result->second;
 }

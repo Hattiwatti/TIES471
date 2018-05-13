@@ -67,6 +67,8 @@ bool Application::Initialize()
   glfwSetWindowFocusCallback(m_pWindow, focusCallback);
   glfwSetWindowSizeCallback(m_pWindow, sizeCallback);
 
+  glfwSwapInterval(0);
+
   /*------------------
     Initialize GLEW
    -------------------*/
@@ -101,8 +103,7 @@ bool Application::Initialize()
 
 void Application::Run()
 {
-  // For some reason key callback refuses to work
-  // if it's set in Initialize()
+  // For some reason key callback refuses to work if it's set in Initialize()
   glfwSetKeyCallback(m_pWindow, keyCallback);
 
   while (!glfwWindowShouldClose(m_pWindow))
@@ -122,11 +123,15 @@ void Application::Run()
     m_pModelManager->Draw();
 
     m_pRenderer->LightingPass(g_brdfMethod, g_debugMode);
+
     //m_pRenderer->Present();
 
     if (g_showUI)
     {
       ImGui_ImplGlfwGL3_NewFrame();
+
+      ImGui::ShowDemoWindow();
+
       ImGui::Begin("Test");
       {
         ImGui::Text("Hello world");
@@ -152,7 +157,7 @@ void Application::Run()
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
 
-        ImGui::Text("Frame time: %f", m_dtFrameTime);
+        ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
       }ImGui::End();
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());

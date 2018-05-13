@@ -6,7 +6,7 @@ public:
   LightManager();
   ~LightManager();
 
-
+  void Update(float);
 
 private:
 

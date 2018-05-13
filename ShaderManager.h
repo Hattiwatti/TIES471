@@ -5,19 +5,24 @@
 #include <string>
 #include <vector>
 
-struct ShaderInfo
+struct Shader
 {
   std::string const name;
   std::string const vertexFile;
   std::string const fragmentFile;
 
-  ShaderInfo(std::string _name, std::string _vertex, std::string _fragment) :
+  GLuint programId;
+  std::unordered_map<std::string, GLuint> uniformLocations;
+
+  Shader(std::string _name, std::string vsFile, std::string fsFile) :
     name(_name),
-    vertexFile(_vertex),
-    fragmentFile(_fragment)
+    vertexFile(vsFile),
+    fragmentFile(fsFile)
   {
+
   }
 };
+
 
 class ShaderManager
 {
@@ -34,14 +39,11 @@ public:
   void Recompile();
 
 private:
-  GLuint GetUniformLocation(const char* uniformName);
+  GLuint GetUniformLocation(std::string const& uniformName);
 
 private:
-  std::unordered_map<std::string, GLuint> m_shaderPrograms;
-  std::vector<ShaderInfo> m_shaderFiles;
-
-  std::string m_activeName;
-  GLuint m_activeShader;
+  std::unordered_map<std::string, Shader> m_shaderPrograms;
+  Shader* m_activeShader;
 
 public:
   ShaderManager(ShaderManager const&) = delete;
