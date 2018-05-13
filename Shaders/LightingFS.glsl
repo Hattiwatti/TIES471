@@ -10,63 +10,28 @@ layout(std140) uniform ViewBlock
   float AlbeidoMultiplier;
   float MetallicMultiplier;
   float RoughnessMultiplier;
+  int method;
+  int brdfMethod;
 };
 
 in vec2 texCoord;
 
 uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
-uniform sampler2D texture_albedoMetal;
-uniform sampler2D texture_roughness;
+uniform sampler2D texture_albedo;
+uniform sampler2D texture_surface;
 uniform sampler2D shadowMap;
 uniform samplerCube skyboxTexture;
 
 uniform mat4 LightMVP;
-uniform int method;
-uniform int brdfMethod;
 
-const mat4 shadowBiasMatrix = mat4(vec4(0.5, 0, 0, 0),
-  vec4(0, 0.5, 0, 0),
-  vec4(0, 0, 0.5, 0),
-  vec4(0.5, 0.5, 0.5, 1.0));
+const mat4 shadowBiasMatrix = mat4( vec4(0.5, 0, 0, 0),
+                                    vec4(0, 0.5, 0, 0),
+                                    vec4(0, 0, 0.5, 0),
+                                    vec4(0.5, 0.5, 0.5, 1.0));
 
-const vec3 globalLight = normalize(vec3(1.7, -1, 1));
+const vec3 globalLight = normalize(vec3(0, -1, 1));
 const vec3 globalLightColor = vec3(1, 1, 1);
-
-vec3 diffuseLighting(vec3 color, vec3 N, vec3 L)
-{
-  float I_d = max(0, dot(N, L));
-  return I_d * color;
-}
-
-vec3 specularLighting(vec3 N, vec3 L, vec3 V)
-{
-  float I_s = 0;
-  if (dot(N, L) > 0)
-  {
-    vec3 R = normalize(reflect(-L, N));
-    I_s = pow(dot(V, R), 50.0);
-    I_s = max(0, I_s);
-  }
-
-  return vec3(1, 1, 1)*I_s;
-}
-
-vec3 lambert(vec3 color)
-{
-  return color / 3.1413;
-}
-
-vec3 globalLightPass(vec3 diffuseColor, vec3 fragPos, vec3 fragNormal)
-{
-  vec3 lightDir = -globalLight;
-  vec3 viewDir = normalize(CameraPos - fragPos);
-
-  vec3 diffuse = diffuseLighting(diffuseColor, fragNormal, lightDir);
-  vec3 specular = specularLighting(fragNormal, lightDir, viewDir);
-
-  return diffuse + specular;
-}
 
 //http://graphicrants.blogspot.fi/2013/08/specular-brdf-reference.html
 // NORMAL DISTRIBUTION FUNCTIONS
@@ -166,7 +131,7 @@ vec3 BlinnPhongBRDF(vec3 N, vec3 L, vec3 H, float metallic)
   return intensity * vec3(1.0);
 }
 
-vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
+vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness, float fragIOR)
 {
   vec4 fragLightProj = shadowBiasMatrix * LightMVP * vec4(fragPos, 1);
   float shadowDepth = texture(shadowMap, fragLightProj.xy).z;
@@ -200,11 +165,13 @@ void main()
 {
   vec3 fragPosition = texture(texture_position, texCoord).rgb;
   vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec4 fragDiffuseMetallic = texture(texture_albedoMetal, texCoord);
+  vec3 surface = texture(texture_surface, texCoord).rgb;
 
-  vec3 fragAlbeido = fragDiffuseMetallic.rgb * AlbeidoMultiplier;
-  float fragMetallic = fragDiffuseMetallic.a * MetallicMultiplier;
-  float fragRoughness = texture(texture_roughness, texCoord).r * RoughnessMultiplier;
+  vec3 fragAlbeido = texture(texture_albedo, texCoord).rgb * AlbeidoMultiplier;
+  float fragMetallic = surface.r * MetallicMultiplier;
+  float fragRoughness = surface.b * RoughnessMultiplier;
+  float fragIOR = surface.g;
 
-  FragColor = vec4(CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0);
+  vec3 fragLight = CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR);
+  FragColor = vec4(fragLight, 1.0);
 }

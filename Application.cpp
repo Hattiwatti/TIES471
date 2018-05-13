@@ -17,8 +17,6 @@ static const glm::vec2  g_initialSize(1280, 720);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI = true;
 static       bool       g_hasFocus = true;
-static       int        g_debugMode = 0;
-static       int        g_brdfMethod = 1;
 
 static const char*     debugModes[] =
 { "Final", "Position", "Normal", "Diffuse", "Metallic", "Roughness", "Irradiance", "Shadowmap" };
@@ -92,11 +90,12 @@ bool Application::Initialize()
   /*-----------------------------------------*/
 
   m_pCamera = std::make_unique<Camera>();
+  m_pLightManager = std::make_unique<LightManager>();
   m_pModelManager = std::make_unique<ModelManager>();
   m_pRenderer = std::make_unique<Renderer>();
 
   m_pRenderer->Initialize(g_initialSize);
-  m_pModelManager->LoadObj("./Resources/SceneNew.obj");
+  m_pModelManager->LoadObj("./Resources/Scene.obj");
 
   m_pModelManager->CreateSphereGrid();
 
@@ -119,11 +118,10 @@ void Application::Run()
     m_pCamera->Update(m_dtFrameTime);
     m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
 
-    m_pRenderer->NewFrame();
-    m_pRenderer->GeometryPass(m_pModelManager->GetModels());
-    m_pRenderer->LightingPass(g_brdfMethod, g_debugMode);
+    m_pLightManager->Update(m_dtFrameTime);
 
-    //m_pRenderer->Present();
+    m_pRenderer->NewFrame();
+    m_pRenderer->DrawGeometry(m_pModelManager->GetModels(), m_pLightManager->GetLights());
 
     if (g_showUI)
     {
@@ -132,14 +130,14 @@ void Application::Run()
       ImGui::Begin("Test");
       {
         ImGui::Text("Hello world");
+        DebugUniformBlock& debug = m_pRenderer->GetDebugStruct();
 
         ImGui::Text("Debug mode");
-        ImGui::Combo("##debug", &g_debugMode, debugModes, 8);
+        ImGui::Combo("##debug", &debug.debugMode, debugModes, 8);
 
         ImGui::Text("BRDF Methods");
-        ImGui::Combo("##BRDFMethod", &g_brdfMethod, brdfMethods, 2);
+        ImGui::Combo("##BRDFMethod", &debug.brdfMethod, brdfMethods, 2);
 
-        DebugUniformBlock& debug = m_pRenderer->GetDebugStruct();
         ImGui::Text("Albeido");
         ImGui::InputFloat("##Albeido", &debug.AlbeidoMultiplier, 0.01f, 0.01f, 2);
         ImGui::Text("Metallic");
@@ -153,6 +151,12 @@ void Application::Run()
 
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
+
+        if (ImGui::Button("Create Lights"))
+          m_pLightManager->CreateLights();
+
+        if (ImGui::Button("Destroy Lights"))
+          m_pLightManager->DestroyLights();
 
         ImGui::Dummy(ImVec2(10, 10));
         ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);

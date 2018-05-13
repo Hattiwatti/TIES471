@@ -125,6 +125,8 @@
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="LightManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Model.cpp" />
@@ -159,6 +161,8 @@
     <None Include="Shaders\IrradianceVS.glsl" />
     <None Include="Shaders\LightingFS.glsl" />
     <None Include="Shaders\LightingVS.glsl" />
+    <None Include="Shaders\PointLightFS.glsl" />
+    <None Include="Shaders\PointLightVS.glsl" />
     <None Include="Shaders\SkyboxFS.glsl" />
     <None Include="Shaders\SkyboxVS.glsl" />
   </ItemGroup>

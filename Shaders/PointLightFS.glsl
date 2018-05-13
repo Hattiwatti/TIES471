@@ -1,7 +1,7 @@
 #version 400 core
 #define M_PI 3.1415926535897932384626433832795
 
-layout (location = 0) out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
 
 layout(std140) uniform ViewBlock
 {
@@ -10,63 +10,20 @@ layout(std140) uniform ViewBlock
   float AlbeidoMultiplier;
   float MetallicMultiplier;
   float RoughnessMultiplier;
+  int method;
+  int brdfMethod;
 };
 
 in vec2 texCoord;
 
 uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
-uniform sampler2D texture_albedoMetal;
-uniform sampler2D texture_roughness;
-uniform sampler2D shadowMap;
-uniform samplerCube skyboxTexture;
+uniform sampler2D texture_albedo;
+uniform sampler2D texture_surface;
 
-uniform mat4 LightMVP;
-uniform int method;
-uniform int brdfMethod;
-
-const mat4 shadowBiasMatrix = mat4(vec4(0.5, 0, 0, 0),
-  vec4(0, 0.5, 0, 0),
-  vec4(0, 0, 0.5, 0),
-  vec4(0.5, 0.5, 0.5, 1.0));
-
-const vec3 globalLight = normalize(vec3(1.7, -1, 1));
-const vec3 globalLightColor = vec3(1, 1, 1);
-
-vec3 diffuseLighting(vec3 color, vec3 N, vec3 L)
-{
-  float I_d = max(0, dot(N, L));
-  return I_d * color;
-}
-
-vec3 specularLighting(vec3 N, vec3 L, vec3 V)
-{
-  float I_s = 0;
-  if (dot(N, L) > 0)
-  {
-    vec3 R = normalize(reflect(-L, N));
-    I_s = pow(dot(V, R), 50.0);
-    I_s = max(0, I_s);
-  }
-
-  return vec3(1, 1, 1)*I_s;
-}
-
-vec3 lambert(vec3 color)
-{
-  return color / 3.1413;
-}
-
-vec3 globalLightPass(vec3 diffuseColor, vec3 fragPos, vec3 fragNormal)
-{
-  vec3 lightDir = -globalLight;
-  vec3 viewDir = normalize(CameraPos - fragPos);
-
-  vec3 diffuse = diffuseLighting(diffuseColor, fragNormal, lightDir);
-  vec3 specular = specularLighting(fragNormal, lightDir, viewDir);
-
-  return diffuse + specular;
-}
+uniform vec3 lightPosition;
+uniform vec3 lightColor;
+uniform float lightRadius;
 
 //http://graphicrants.blogspot.fi/2013/08/specular-brdf-reference.html
 // NORMAL DISTRIBUTION FUNCTIONS
@@ -75,7 +32,7 @@ float DBlinn(vec3 n, vec3 h, float a)
 {
   float a2 = a * a;
   float dotNH = dot(n, h);
-  float exponent = 2/a2 - 2;
+  float exponent = 2 / a2 - 2;
 
   return 1 / (M_PI*a2) * pow(dotNH, exponent);
 }
@@ -128,13 +85,15 @@ vec3 FCookTorrance(vec3 V, vec3 H, vec3 F0)
   vec3 n = (vec3(1) + rootF0) / (vec3(1) - rootF0);
 
   vec3 c = vec3(dot(V, H));
-  vec3 g = sqrt(n*n + c*c - vec3(1));
+  vec3 g = sqrt(n*n + c * c - vec3(1));
 
   vec3 term1 = (g - c) / (g + c);
   vec3 term2 = ((g + c)*c - vec3(1)) / ((g - c)*c + vec3(1));
 
-  return 0.5 * term1 * term1 * (vec3(1) + term2* term2);
+  return 0.5 * term1 * term1 * (vec3(1) + term2 * term2);
 }
+
+// BRDF Functions
 
 vec3 CookTorranceBRDF(vec3 N, vec3 V, vec3 L, vec3 H, vec3 albeido, float metallic, float roughness)
 {
@@ -166,13 +125,14 @@ vec3 BlinnPhongBRDF(vec3 N, vec3 L, vec3 H, float metallic)
   return intensity * vec3(1.0);
 }
 
-vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
+vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness, float fragIOR)
 {
-  vec4 fragLightProj = shadowBiasMatrix * LightMVP * vec4(fragPos, 1);
-  float shadowDepth = texture(shadowMap, fragLightProj.xy).z;
-  float fragDepth = fragLightProj.z;
+  vec3 lightDir = lightPosition - fragPos;
+  float distance = length(lightDir);
+  if (distance > lightRadius)
+    return vec3(0, 0, 0);
 
-  vec3 lightDir = -globalLight;
+  lightDir /= distance;
   vec3 viewDir = normalize(CameraPos - fragPos);
   vec3 halfway = normalize(lightDir + viewDir);
 
@@ -180,31 +140,39 @@ vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fr
   dotNL = max(0, dotNL);
 
   vec3 SpecularColor = vec3(0);
-  if (dotNL == 0 || fragDepth > (shadowDepth + 0.01))
+  if (dotNL == 0)
     return vec3(0);
 
   switch (brdfMethod)
   {
   case 0:
-    SpecularColor = BlinnPhongBRDF(fragNormal,lightDir, halfway, 2/pow(fragRoughness, 4) - 2);
+    SpecularColor = BlinnPhongBRDF(fragNormal, lightDir, halfway, 2 / pow(fragRoughness, 4) - 2);
     break;
   case 1:
     SpecularColor = CookTorranceBRDF(fragNormal, viewDir, lightDir, halfway, fragAlbeido, fragMetallic, fragRoughness);
     break;
   }
 
-  return dotNL * fragAlbeido + SpecularColor;
+  float d2 = distance * distance;
+  float r2 = lightRadius * lightRadius;
+  float denominator = 1 + 2 * distance / lightRadius + d2 / r2;
+
+  float attenuation = 1 / denominator;
+
+  return attenuation * dotNL * fragAlbeido * lightColor + SpecularColor;
 }
 
 void main()
 {
   vec3 fragPosition = texture(texture_position, texCoord).rgb;
   vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec4 fragDiffuseMetallic = texture(texture_albedoMetal, texCoord);
+  vec3 surface = texture(texture_surface, texCoord).rgb;
 
-  vec3 fragAlbeido = fragDiffuseMetallic.rgb * AlbeidoMultiplier;
-  float fragMetallic = fragDiffuseMetallic.a * MetallicMultiplier;
-  float fragRoughness = texture(texture_roughness, texCoord).r * RoughnessMultiplier;
+  vec3 fragAlbeido = texture(texture_albedo, texCoord).rgb * AlbeidoMultiplier;
+  float fragMetallic = surface.r * MetallicMultiplier;
+  float fragRoughness = surface.b * RoughnessMultiplier;
+  float fragIOR = surface.g;
 
-  FragColor = vec4(CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0);
+  vec3 fragLight = CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR);
+  FragColor = vec4(fragLight, 1.0);
 }

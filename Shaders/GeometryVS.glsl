@@ -22,10 +22,10 @@ out VertexData {
 
 void main()
 {
-  gl_Position = ViewProj * Model * vec4(position, 1.0);
-  VertexOut.position = position;
+  VertexOut.position = vec3((Model * vec4(position, 1.0)).xyz);
   VertexOut.normal = normalize(normal);//normalize(normalMatrix * normal);
   VertexOut.texCoord = texCoord;
+  gl_Position = ViewProj * vec4(VertexOut.position, 1.0);
 
   vec3 T = normalize(tangent);
   vec3 B = normalize(cross(VertexOut.normal, T));

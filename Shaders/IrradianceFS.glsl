@@ -11,18 +11,17 @@ layout(std140) uniform ViewBlock
   float AlbeidoMultiplier;
   float MetallicMultiplier;
   float RoughnessMultiplier;
+  int method;
+  int brdfMethod;
 };
 
 in vec2 texCoord;
 
 uniform sampler2D texture_position;
 uniform sampler2D texture_normal;
-uniform sampler2D texture_albedoMetal;
-uniform sampler2D texture_roughness;
+uniform sampler2D texture_albedo;
+uniform sampler2D texture_surface;
 uniform samplerCube skyboxTexture;
-
-uniform int method;
-uniform int brdfMethod;
 
 float GGGX(vec3 N, vec3 V, vec3 H, float a)
 {
@@ -63,69 +62,12 @@ vec3 FCookTorrance(vec3 V, vec3 H, vec3 F0)
   return 0.5 * term1 * term1 * (vec3(1) + term2 * term2);
 }
 
-
-const vec4 magic = vec4(1111.1111, 3141.5926, 2718.2818, 0);
-float rand(vec2 co) {
-  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-vec3 GenerateSampleVector(float roughness, float i, float sampleCount)
+vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
 {
-  float rand1 = rand(vec2(i, sampleCount));
-  float rand2 = rand(vec2(i*179, sampleCount));
-
-  float phi = atan((roughness*sqrt(rand1))/sqrt(1-rand1));
-  float theta = 2 * M_PI*rand2;
-
-  float x = cos(theta)*sin(phi);
-  float z = sin(theta)*sin(phi);
-  float y = cos(phi);
-
-  return vec3(x, y, z);
+  float dotVH = dot(v, h);
+  return F0 + (max(vec3(1.0 - roughness), F0) - F0)*pow(1.0 - dotVH, 5.0);
 }
 
-mat3 CalculateMatrix(vec3 up)
-{
-  vec3 first = vec3(up.y, up.x, 0);
-  vec3 second = normalize(cross(up, first));
-
-  return mat3(second, up, normalize(cross(second, up)));
-}
-
-const int SampleCount = 1;
-
-vec3 GatherSpecular(vec3 N, vec3 V, float roughness, vec3 F0, out vec3 ks)
-{
-  vec3 reflection = reflect(-V, N);
-  mat3 worldMatrix = CalculateMatrix(reflection);
-
-  float a = roughness;
-  float dotNV = clamp(dot(N, V), 0.0, 1.0);
-
-  vec3 radiance = vec3(0);
-  for (int i = 0; i < SampleCount; ++i)
-  {
-    vec3 sampleVector = reflection; // GenerateSampleVector(roughness, i, 10);
-    //sampleVector = normalize(worldMatrix * sampleVector);
-
-    vec3 H = normalize(sampleVector + V);
-    float cosT = clamp(dot(sampleVector, N), 0.0, 1.0);
-    float sinT = sqrt(1 - cosT * cosT);
-
-    float G = GGGX(N, V, H, a);//GCookTorrance(N, V, sampleVector, H);
-    vec3 F = FCookTorrance(V, H, F0);
-    float dotNH = max(0, min(1, dot(N, H)));
-    float denominator = clamp((4 * (dotNV * dotNH) + 0.005), 0.0, 1.0);
-
-    vec3 specularColor = texture(skyboxTexture, sampleVector).rgb;
-
-    ks += F;
-    radiance += (specularColor * G * F * sinT) / denominator;
-  }
-
-  ks = clamp(ks / SampleCount, 0.0, 1.0);
-  return clamp(radiance / SampleCount, 0.0, 1.0);
-}
 
 vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
 {
@@ -133,27 +75,28 @@ vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float 
   vec3 irradiance = texture(skyboxTexture, fragNormal).rgb;
   vec3 diffuse = fragAlbeido * irradiance;
 
-  float IOR = 1.5;
+  float IOR = 1.0;
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
   F0 = mix(F0, fragAlbeido, fragMetallic);
 
   vec3 ks = vec3(0);
-  vec3 specular = GatherSpecular(fragNormal, viewDir, fragRoughness, F0, ks);
+  vec3 specular = vec3(0);// GatherSpecular(fragNormal, viewDir, fragRoughness, F0, ks);
   vec3 kd = (vec3(1.0) - ks) * (1 - fragMetallic);
 
-  return kd * diffuse + specular;
+  return kd * diffuse;
 }
 
 void main()
 {
   vec3 fragPosition = texture(texture_position, texCoord).rgb;
   vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec4 fragDiffuseMetallic = texture(texture_albedoMetal, texCoord);
+  vec3 surface = texture(texture_surface, texCoord).rgb;
 
-  vec3 fragAlbeido = fragDiffuseMetallic.rgb * AlbeidoMultiplier;
-  float fragMetallic = fragDiffuseMetallic.a * MetallicMultiplier;
-  float fragRoughness = texture(texture_roughness, texCoord).r * RoughnessMultiplier;
+  vec3 fragAlbeido = texture(texture_albedo, texCoord).rgb * AlbeidoMultiplier;
+  float fragMetallic = surface.r * MetallicMultiplier;
+  float fragRoughness = surface.b * RoughnessMultiplier;
+  float fragIOR = surface.g;
 
   fragRoughness = clamp(fragRoughness - 0.001, 0.0, 1.0) + 0.001;
 

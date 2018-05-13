@@ -1,6 +1,7 @@
 #pragma once
 #include "Camera.h"
 #include "Renderer.h"
+#include "LightManager.h"
 #include "ModelManager.h"
 
 #include <GLFW/glfw3.h>
@@ -31,6 +32,7 @@ private:
   float m_FPSBuffer[100];
 
   std::unique_ptr<Camera> m_pCamera;
+  std::unique_ptr<LightManager> m_pLightManager;
   std::unique_ptr<ModelManager> m_pModelManager;
   std::unique_ptr<Renderer> m_pRenderer;
 

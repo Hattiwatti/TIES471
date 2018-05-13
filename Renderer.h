@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "ShaderManager.h"
 #include "Model.h"
+#include "Light.h"
 
 enum BRDFMethod
 {
@@ -16,8 +17,8 @@ struct GBuffer
   GLuint depth;
   GLuint position;
   GLuint normals;
-  GLuint albedoMetallic;
-  GLuint roughness;
+  GLuint albedo;
+  GLuint surface;
 };
 
 struct DebugUniformBlock
@@ -25,7 +26,9 @@ struct DebugUniformBlock
   float AlbeidoMultiplier{ 1.0f };
   float MetallicMultiplier{ 1.0f };
   float RoughnessMultiplier{ 1.0f };
-  float Pad001;
+  int debugMode{ 0 };
+  int brdfMethod{ 1 };
+  float Pad001[2];
 };
 
 struct UniformBlock
@@ -53,8 +56,9 @@ public:
   void Initialize(glm::vec2 const& initialSize);
 
   void NewFrame();
+  void DrawGeometry(std::vector<Model*> const&, std::vector<std::unique_ptr<Light>> const&);
   void GeometryPass(std::vector<Model*> const&);
-  void LightingPass(int brdf, int debug);
+  void LightingPass(std::vector<std::unique_ptr<Light>> const& lights);
   void Present();
 
   void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);
@@ -70,8 +74,14 @@ private:
 
   void UpdateShadowMap();
 
-  void DrawIrradiance(int debugMethod);
-  void DrawLights(int brdfMethod);
+  void DrawIrradiance();
+  void DrawLights(std::vector<std::unique_ptr<Light>> const&);
+
+  void SetupGeometryPass();
+  void SetupLightingPass();
+
+  //void GeometryPass(std::vector<Model *> const&);
+
 
 private:
   ShaderManager m_shaderManager;

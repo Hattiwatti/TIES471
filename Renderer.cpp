@@ -99,7 +99,7 @@ void Renderer::Initialize(glm::vec2 const& initialSize)
   glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 
-  glm::vec3 lightDir = glm::normalize(glm::vec3(1.7, -1, 1));
+  glm::vec3 lightDir = glm::normalize(glm::vec3(0, -1, 1));
 
   m_DirectionalLight.projMatrix = glm::ortho<float>(-15, 15, -15, 15, -30, 30);
   m_DirectionalLight.viewMatrix = glm::lookAt(glm::vec3(0, 0, 0), lightDir, glm::vec3(0, 1, 0));
@@ -160,20 +160,20 @@ void Renderer::CreateBuffers(int width, int height)
 
   // DIFFUSE-METALLIC GEOMETRY TEXTURE
   // Diffuse = rgb, Metallic = a
-  glGenTextures(1, &m_gbuffer.albedoMetallic);
-  glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedoMetallic);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glGenTextures(1, &m_gbuffer.albedo);
+  glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedo);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_gbuffer.albedoMetallic, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_gbuffer.albedo, 0);
 
   // ROUGHNESS GEOMETRY TEXTURE
-  glGenTextures(1, &m_gbuffer.roughness);
-  glBindTexture(GL_TEXTURE_2D, m_gbuffer.roughness);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+  glGenTextures(1, &m_gbuffer.surface);
+  glBindTexture(GL_TEXTURE_2D, m_gbuffer.surface);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_gbuffer.roughness, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_gbuffer.surface, 0);
 
   unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
   glDrawBuffers(4, attachments);
@@ -199,6 +199,8 @@ void Renderer::CreateShaders()
   m_shaderManager.AddShader("IrradianceShader", "./Shaders/IrradianceVS.glsl", "./Shaders/IrradianceFS.glsl");
   m_shaderManager.AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
   m_shaderManager.AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
+
+  m_shaderManager.AddShader("PointLightShader", "./Shaders/PointLightVS.glsl", "./Shaders/PointLightFS.glsl");
 }
 
 void Renderer::NewFrame()
@@ -208,6 +210,12 @@ void Renderer::NewFrame()
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void Renderer::DrawGeometry(std::vector<Model*> const& models, std::vector<std::unique_ptr<Light>> const& lights)
+{
+  GeometryPass(models);
+  LightingPass(lights);
 }
 
 void Renderer::GeometryPass(std::vector<Model*> const& models)
@@ -246,7 +254,7 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
   m_shaderManager.UseShader("GeometryStageShader");
   m_shaderManager.SetUniform1i("texture_Diffuse", 0);
   m_shaderManager.SetUniform1i("texture_Normal", 1);
-  m_shaderManager.SetUniform1i("texture_Metal", 2);
+  m_shaderManager.SetUniform1i("texture_MetallicIOR", 2);
   m_shaderManager.SetUniform1i("texture_Roughness", 3);
 
   for (auto& model : models)
@@ -260,13 +268,15 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
       m_shaderManager.SetUniform1f("metallic", material.metallic);
       m_shaderManager.SetUniform1f("roughness", material.roughness);
     }
+    else
+      model->GetMaterial()->Bind();
 
     m_shaderManager.SetUniformMatrix("Model", model->GetTransform());
     model->Draw();
   }
 }
 
-void Renderer::LightingPass(int brdf, int debug)
+void Renderer::LightingPass(std::vector<std::unique_ptr<Light>> const& lights)
 {
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
@@ -290,9 +300,9 @@ void Renderer::LightingPass(int brdf, int debug)
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, m_gbuffer.normals);
   glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedoMetallic);
+  glBindTexture(GL_TEXTURE_2D, m_gbuffer.albedo);
   glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, m_gbuffer.roughness);
+  glBindTexture(GL_TEXTURE_2D, m_gbuffer.surface);
   glActiveTexture(GL_TEXTURE4);
   glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxIrradiance);
   glActiveTexture(GL_TEXTURE5);
@@ -303,12 +313,11 @@ void Renderer::LightingPass(int brdf, int debug)
   glStencilMask(0);
 
   // Draw ambient irradiance from skybox
- // glDisable(GL_DEPTH_TEST);
   glDepthFunc(GL_ALWAYS);
-  DrawIrradiance(debug);
+  DrawIrradiance();
 
-  if(debug == 0)
-    DrawLights(brdf);
+  if(m_uniformBlock.debugBlock.debugMode == 0)
+    DrawLights(lights);
 
   glDepthFunc(GL_LEQUAL);
 
@@ -374,34 +383,47 @@ void Renderer::UpdateShadowMap()
   m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
 }
 
-void Renderer::DrawIrradiance(int debugMethod)
+void Renderer::DrawIrradiance()
 {
   m_shaderManager.UseShader("IrradianceShader");
   m_shaderManager.SetUniform1i("texture_position", 0);
   m_shaderManager.SetUniform1i("texture_normal", 1);
-  m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
-  m_shaderManager.SetUniform1i("texture_roughness", 3);
+  m_shaderManager.SetUniform1i("texture_albedo", 2);
+  m_shaderManager.SetUniform1i("texture_surface", 3);
   m_shaderManager.SetUniform1i("skyboxTexture", 4);
-  m_shaderManager.SetUniform1i("method", debugMethod);
 
   glDrawArrays(GL_QUADS, 0, 4);
 }
 
-void Renderer::DrawLights(int brdfMethod)
+void Renderer::DrawLights(std::vector<std::unique_ptr<Light>> const& lights)
 {
   glm::mat4 LightMVP = m_DirectionalLight.projMatrix * m_DirectionalLight.viewMatrix;
 
   m_shaderManager.UseShader("LightingStageShader");
   m_shaderManager.SetUniform1i("texture_position", 0);
   m_shaderManager.SetUniform1i("texture_normal", 1);
-  m_shaderManager.SetUniform1i("texture_albedoMetal", 2);
-  m_shaderManager.SetUniform1i("texture_roughness", 3);
+  m_shaderManager.SetUniform1i("texture_albedo", 2);
+  m_shaderManager.SetUniform1i("texture_surface", 3);
   m_shaderManager.SetUniform1i("shadowMap", 5);
-  m_shaderManager.SetUniform1i("brdfMethod", brdfMethod);
   m_shaderManager.SetUniformMatrix("LightMVP", LightMVP);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE);
   glDrawArrays(GL_QUADS, 0, 4);
+
+  m_shaderManager.UseShader("PointLightShader");
+  m_shaderManager.SetUniform1i("texture_position", 0);
+  m_shaderManager.SetUniform1i("texture_normal", 1);
+  m_shaderManager.SetUniform1i("texture_albedo", 2);
+  m_shaderManager.SetUniform1i("texture_surface", 3);
+
+  for (auto& pointLight : lights)
+  {
+    m_shaderManager.SetUniform3f("lightPosition", pointLight->GetPosition());
+    m_shaderManager.SetUniform3f("lightColor", pointLight->GetColor());
+    m_shaderManager.SetUniform1f("lightRadius", pointLight->GetRadius());
+    glDrawArrays(GL_QUADS, 0, 4);
+  }
+
   glDisable(GL_BLEND);
 }

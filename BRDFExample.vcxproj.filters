@@ -57,6 +57,12 @@
     <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LightManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h">
@@ -137,6 +143,12 @@
       <Filter>Source Files\Shaders</Filter>
     </None>
     <None Include="Shaders\DepthFS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\PointLightFS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\PointLightVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>
