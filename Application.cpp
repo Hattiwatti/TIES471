@@ -128,8 +128,6 @@ void Application::Run()
     {
       ImGui_ImplGlfwGL3_NewFrame();
 
-      ImGui::ShowDemoWindow();
-
       ImGui::Begin("Test");
       {
         ImGui::Text("Hello world");
@@ -155,7 +153,23 @@ void Application::Run()
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
 
+        ImGui::Dummy(ImVec2(10, 10));
         ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+        ImGui::PlotLines("##FPS2", m_FPSBuffer, 99, 0, "Frame time in milliseconds", 0, 5, ImVec2(250, 100));
+
+        ImGui::Dummy(ImVec2(10, 10));
+
+        m_FPSBuffer[99] += (m_dtFrameTime) / 120;
+        m_FPSSamples += 1;
+        if (m_FPSSamples >= 120)
+        {
+          m_FPSSamples = 0;
+          m_FPSBuffer[99] *= 1000;
+          for (int i = 0; i < 99; ++i)
+            m_FPSBuffer[i] = m_FPSBuffer[i + 1];
+          m_FPSBuffer[99] = 0;
+        }
+
       }ImGui::End();
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());

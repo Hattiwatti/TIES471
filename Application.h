@@ -27,6 +27,9 @@ private:
   double m_LastFrameTime;
   double m_dtFrameTime;
 
+  int m_FPSSamples;
+  float m_FPSBuffer[100];
+
   std::unique_ptr<Camera> m_pCamera;
   std::unique_ptr<ModelManager> m_pModelManager;
   std::unique_ptr<Renderer> m_pRenderer;

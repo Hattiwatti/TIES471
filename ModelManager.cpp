@@ -124,7 +124,6 @@ void ModelManager::LoadObj(const char* sFilename)
   }
 
   std::cout << "Created " << m_models.size() << " models from " << sFilename << std::endl;
-
   std::cout << "Created " << m_materials.size() << " materials" << std::endl;
 }
 
@@ -134,6 +133,8 @@ void ModelManager::CreateSphereGrid()
   float metallic = 1.0f;
   float roughness = 0.001f;
   float IoR = 0.5f;
+
+
 
   m_materials.push_back(new Material(color, metallic, roughness, IoR));
 }
