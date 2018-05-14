@@ -10,6 +10,7 @@ layout(std140) uniform ViewBlock
   float AlbeidoMultiplier;
   float MetallicMultiplier;
   float RoughnessMultiplier;
+  float HardcodedSpecular;
   int method;
   int brdfMethod;
 };
@@ -111,7 +112,7 @@ vec3 BlinnPhongBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic)
   float dotNL = max(dot(N, L), 0.0);
   float dotNH = max(dot(N, H), 0.0);
   
-  float specular = pow(dotNH, 56.0);
+  float specular = pow(dotNH, HardcodedSpecular);
 
   vec3 diffuse = dotNL * albedo * radiance;
   return diffuse + specular * vec3(1.0);

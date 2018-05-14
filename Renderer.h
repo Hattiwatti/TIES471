@@ -20,9 +20,10 @@ struct DebugUniformBlock
   float AlbeidoMultiplier{ 1.0f };
   float MetallicMultiplier{ 1.0f };
   float RoughnessMultiplier{ 1.0f };
+  float HardcodedSpecular{ 128.f };
   int debugMode{ 0 };
   int brdfMethod{ 1 };
-  float Pad001[2];
+  float Pad001[3];
 };
 
 struct UniformBlock

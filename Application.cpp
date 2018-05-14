@@ -134,6 +134,7 @@ void Application::Run()
       {
         ImGui::Text("Hello world");
         DebugUniformBlock& debug = m_pRenderer->GetDebugStruct();
+        RenderOptions& options = m_pRenderer->GetOptions();
 
         ImGui::Text("Debug mode");
         ImGui::Combo("##debug", &debug.debugMode, debugModes, 8);
@@ -147,23 +148,30 @@ void Application::Run()
         ImGui::InputFloat("##Metallic", &debug.MetallicMultiplier, 0.01f, 0.01f, 2);
         ImGui::Text("Roughness");
         ImGui::InputFloat("##Roughness", &debug.RoughnessMultiplier, 0.01f, 0.01f, 2);
+        ImGui::Text("Specular shininess");
+        ImGui::InputFloat("##Shininess", &debug.HardcodedSpecular, 1.f, 2.f, 2);
 
         debug.AlbeidoMultiplier = max(0, debug.AlbeidoMultiplier);
         debug.MetallicMultiplier = max(0, debug.MetallicMultiplier);
         debug.RoughnessMultiplier = max(0, debug.RoughnessMultiplier);
+
+        ImGui::Checkbox("Draw sunlight", &options.DrawSun);
+        ImGui::Checkbox("Draw skybox", &options.DrawSkybox);
+        ImGui::Checkbox("Draw lights", &options.DrawLights);
+        ImGui::Checkbox("Draw irradiance", &options.DrawIndirect);
 
         if (ImGui::Button("Recompile shaders"))
           m_pRenderer->RecompileShaders();
 
         if (ImGui::Button("Create Lights"))
           m_pLightManager->CreateLights();
-
+        ImGui::SameLine();
         if (ImGui::Button("Destroy Lights"))
           m_pLightManager->DestroyLights();
 
         ImGui::Dummy(ImVec2(10, 10));
         ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
-        ImGui::PlotLines("##FPS2", m_FPSBuffer, 99, 0, "Frame time in milliseconds", 0, 2, ImVec2(250, 100));
+        ImGui::PlotLines("##FPS2", m_FPSBuffer, 99, 0, "Frame time (ms)", 0, 5, ImVec2(250, 100));
 
         ImGui::Dummy(ImVec2(10, 10));
 

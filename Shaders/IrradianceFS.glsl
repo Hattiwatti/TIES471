@@ -11,6 +11,7 @@ layout(std140) uniform ViewBlock
   float AlbeidoMultiplier;
   float MetallicMultiplier;
   float RoughnessMultiplier;
+  float HardcodedSpecular;
   int method;
   int brdfMethod;
 };
