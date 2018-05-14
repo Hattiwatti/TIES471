@@ -20,8 +20,9 @@ private:
   static void errorCallback(int error, const char* description);
   static void focusCallback(GLFWwindow* pWindow, int focused);
   static void sizeCallback(GLFWwindow* pWindow, int width, int height);
-
   static void keyCallback(GLFWwindow* pWindow, int key, int scancode, int action, int mods);
+
+  void ThreadingTest();
 
 private:
   double m_CurrentFrameTime;

@@ -13,7 +13,7 @@
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "opengl32.lib")
 
-static const glm::vec2  g_initialSize(1280, 720);
+static const glm::vec2  g_initialSize(1920, 1080);
 static const char*      g_windowTitle = "BRDF Example";
 static       bool       g_showUI = true;
 static       bool       g_hasFocus = true;
@@ -102,10 +102,27 @@ bool Application::Initialize()
   return true;
 }
 
+void Application::ThreadingTest()
+{
+  while (true)
+  {
+    if (g_hasFocus)
+    {
+      m_pCamera->Update(0.03);
+      m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
+    }
+
+    Sleep(30);
+  }
+}
+
 void Application::Run()
 {
   // For some reason key callback refuses to work if it's set in Initialize()
   glfwSetKeyCallback(m_pWindow, keyCallback);
+
+  //std::thread th1(&Application::ThreadingTest, this);
+  //th1.detach();
 
   while (!glfwWindowShouldClose(m_pWindow))
   {

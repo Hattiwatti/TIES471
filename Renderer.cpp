@@ -193,6 +193,7 @@ void Renderer::NewFrame()
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 }
 
 void Renderer::DrawGeometry(std::vector<Model*> const& models, std::vector<std::unique_ptr<Light>> const& lights)
@@ -324,11 +325,8 @@ void Renderer::UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfVie
   m_UniformBlock.viewProj = m_View.ProjectionMatrix * m_View.ViewMatrix;
   m_UniformBlock.cameraPosition = m_View.EyePosition;
 
-  // Update shader uniform block
   glBindBuffer(GL_UNIFORM_BUFFER, m_UniformBuffer);
-  UniformBlock* pBlock = (UniformBlock*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(UniformBlock), GL_MAP_WRITE_BIT);
-  *pBlock = m_UniformBlock;
-  glUnmapBuffer(GL_UNIFORM_BUFFER);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformBlock), &m_UniformBlock);
 }
 
 void Renderer::DrawIrradiance()
