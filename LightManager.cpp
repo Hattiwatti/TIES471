@@ -1,7 +1,7 @@
 #include "LightManager.h"
 #include <time.h>
 
-static const int g_lightCount = 100;
+static const int g_lightCount = 10;
 
 LightManager::LightManager()
 {

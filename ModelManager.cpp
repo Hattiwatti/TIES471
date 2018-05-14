@@ -139,34 +139,38 @@ void ModelManager::LoadObj(const char* sFilename)
 void ModelManager::CreateSphereGrid()
 {
   glm::mat4 transform(1.0f);
-  transform[3][1] = 10.f;
+  transform[3][1] = 2.f;
 
   glm::vec4 color(1.0f, 0.2f, 0.2f, 1.0f);
-  float metallic = 0.01f;
-  float roughness = 0.01f;
+  float metallic = 0.1f;
+  float roughness = 0.1f;
   float IoR = 0.5f;
 
   LoadObj("./Resources/Sphere.obj");
   Model* pSphere = m_models[m_models.size() - 1];
   pSphere->SetMaterial(std::make_shared<Material>(color, metallic, roughness, IoR));
   pSphere->SetTransform(transform);
+  transform[3][0] += 2.5f;
 
-  for (int i = 1; i <= 5; ++i)
+  for (int i = 0; i < 5; ++i)
   {
-    transform[3][0] += 2.75f;
-    transform[3][1] = 10.f;
-    metallic = i / 5.f;
+    metallic = (i == 0) ? 0.1f : i / 4.f;
 
-    for (int j = 1; j <= 5; ++j)
+    for (int j = 0; j < 5; ++j)
     {
-      transform[3][1] += 2.75f;
-      roughness = j / 5.f;
+      if (j == 0 && i == 0) continue;
+      roughness = (j == 0) ? 0.1f : j / 4.f;
 
       Model* newSphere = new Model(*pSphere);
-      newSphere->SetTransform(transform);
       newSphere->SetMaterial(std::make_shared<Material>(color, metallic, roughness, IoR));
+      newSphere->SetTransform(transform);
       m_models.push_back(newSphere);
+
+      transform[3][0] += 2.5f;
     }
+
+    transform[3][0] = 0.f;
+    transform[3][1] += 2.5f;
   }
 
 }

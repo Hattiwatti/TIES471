@@ -16,103 +16,87 @@ layout(std140) uniform ViewBlock
 
 in vec2 texCoord;
 
-uniform sampler2D texture_position;
-uniform sampler2D texture_normal;
-uniform sampler2D texture_albedo;
-uniform sampler2D texture_surface;
+uniform sampler2D PositionTex;
+uniform sampler2D NormalTex;
+uniform sampler2D AlbedoTex;
+uniform sampler2D SurfaceTex;
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform float lightRadius;
 
-//http://graphicrants.blogspot.fi/2013/08/specular-brdf-reference.html
-// NORMAL DISTRIBUTION FUNCTIONS
-
-float DBlinn(vec3 n, vec3 h, float a)
+float DGGX(vec3 N, vec3 H, float roughness)
 {
+  float a = roughness * roughness;
   float a2 = a * a;
-  float dotNH = dot(n, h);
-  float exponent = 2 / a2 - 2;
 
-  return 1 / (M_PI*a2) * pow(dotNH, exponent);
+  float dotNH = max(dot(N, H), 0.0);
+  float dotNH2 = dotNH * dotNH;
+
+  float denominator = (dotNH2*(a2 - 1.0) + 1.0);
+  denominator = M_PI * denominator * denominator;
+
+  return a2 / denominator;
 }
 
-float DGCX(vec3 N, vec3 H, float a)
+float GSchlickGGX(vec3 N, vec3 V, float roughness)
 {
-  float a2 = a * a;
-  float dotNH = dot(N, H);
+  float dotNV = max(dot(N, V), 0.0);
 
-  float denominator = dotNH * dotNH*(a2 - 1) + 1;
-  return a2 / (M_PI*denominator*denominator);
+  float r = roughness + 1.0;
+  float k = (r*r) / 8.0;
+
+  float denominator = dotNV * (1.0 - k) + k;
+
+  return dotNV / denominator;
 }
 
-// GEOMETRIC SHADOWING
-float GImplicit(vec3 n, vec3 h, vec3 l, vec3 v)
+float GSmith(vec3 N, vec3 V, vec3 L, float roughness)
 {
-  float dotNV = dot(n, v);
-  float dotNL = dot(n, l);
-  return dotNV * dotNL;
+  float ggx1 = GSchlickGGX(N, V, roughness);
+  float ggx2 = GSchlickGGX(N, L, roughness);
+
+  return ggx1 * ggx2;
 }
 
-float GCookTorrance(vec3 N, vec3 V, vec3 L, vec3 H)
+vec3 FSchlick(vec3 V, vec3 H, vec3 F0)
 {
-  float dotNV = dot(N, V);
-  float dotNH = dot(N, H);
-  float dotVH = dot(V, H);
-  float dotNL = dot(N, L);
-
-  float first = (2 * dotNH*dotNV) / dotVH;
-  float second = (2 * dotNH*dotNL) / dotVH;
-
-  return min(1, min(first, second));
-}
-
-// FRESNEL
-float FNone(vec3 h, vec3 v, float F0)
-{
-  return F0;
-}
-
-vec3 FSchlick(vec3 h, vec3 v, vec3 F0)
-{
-  float dotVH = dot(v, h);
-  return F0 + (vec3(1) - F0)*pow(1 - dotVH, 5);
-}
-
-vec3 FCookTorrance(vec3 V, vec3 H, vec3 F0)
-{
-  vec3 rootF0 = sqrt(F0);
-  vec3 n = (vec3(1) + rootF0) / (vec3(1) - rootF0);
-
-  vec3 c = vec3(dot(V, H));
-  vec3 g = sqrt(n*n + c * c - vec3(1));
-
-  vec3 term1 = (g - c) / (g + c);
-  vec3 term2 = ((g + c)*c - vec3(1)) / ((g - c)*c + vec3(1));
-
-  return 0.5 * term1 * term1 * (vec3(1) + term2 * term2);
+  float dotVH = max(dot(V, H), 0);
+  return F0 + (1.0 - F0) * pow(1.0 - dotVH, 5.0);
 }
 
 // BRDF Functions
 
-vec3 CookTorranceBRDF(vec3 N, vec3 V, vec3 L, vec3 H, vec3 albeido, float metallic, float roughness)
+vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float roughness, float IOR)
 {
-  float a = roughness * roughness;
+  float d = length(lightPosition - fragPos);
+  float attenuation = 1.0 / (d*d);
+  vec3 radiance = attenuation * lightColor * lightRadius * 10;
 
-  float dotNL = dot(N, L);
-  float dotNV = dot(N, V);
+  vec3 L = normalize(lightPosition - fragPos);
+  vec3 V = normalize(CameraPos - fragPos);
+  vec3 H = normalize(L + V);
 
-  float IOR = 1.1;
+  float dotNL = max(dot(N, L), 0.0);
+  float dotNV = max(dot(N, V), 0.0);
+
+  if (dotNL <= 0)
+    return vec3(0, 0, 0);
+
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
-  F0 = mix(F0, albeido, metallic);
+  F0 = vec3(0.04);
+  F0 = mix(F0, albedo, metallic);
 
-  float D = DGCX(N, H, a);
-  vec3 F = FCookTorrance(V, H, F0);//FSchlick(H, V, F0);
-  float G = GCookTorrance(N, V, L, H);
+  float D = DGGX(N, H, roughness);
+  float G = GSmith(N, V, L, roughness);
+  vec3 F = FSchlick(V, H, F0);
 
-  vec3 specular = (D*F*G) / (4 * dotNL*dotNV);
-  return max(specular, vec3(0));
+  vec3 specular = (D*F*G) / (4 * dotNL * dotNV);
+  vec3 kS = F;
+  vec3 kD = (vec3(1.0) - kS) * (1.0-metallic);
+
+  return (kD * albedo / M_PI + specular) * radiance * dotNL;
 }
 
 vec3 BlinnPhongBRDF(vec3 N, vec3 L, vec3 H, float metallic)
@@ -125,54 +109,26 @@ vec3 BlinnPhongBRDF(vec3 N, vec3 L, vec3 H, float metallic)
   return intensity * vec3(1.0);
 }
 
-vec3 CalculateLighting(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness, float fragIOR)
-{
-  vec3 lightDir = lightPosition - fragPos;
-  float distance = length(lightDir);
-  if (distance > lightRadius)
-    return vec3(0, 0, 0);
-
-  lightDir /= distance;
-  vec3 viewDir = normalize(CameraPos - fragPos);
-  vec3 halfway = normalize(lightDir + viewDir);
-
-  float dotNL = dot(fragNormal, lightDir);
-  dotNL = max(0, dotNL);
-
-  vec3 SpecularColor = vec3(0);
-  if (dotNL == 0)
-    return vec3(0);
-
-  switch (brdfMethod)
-  {
-  case 0:
-    SpecularColor = BlinnPhongBRDF(fragNormal, lightDir, halfway, 2 / pow(fragRoughness, 4) - 2);
-    break;
-  case 1:
-    SpecularColor = CookTorranceBRDF(fragNormal, viewDir, lightDir, halfway, fragAlbeido, fragMetallic, fragRoughness);
-    break;
-  }
-
-  float d2 = distance * distance;
-  float r2 = lightRadius * lightRadius;
-  float denominator = 1 + 2 * distance / lightRadius + d2 / r2;
-
-  float attenuation = 1 / denominator;
-
-  return attenuation * dotNL * fragAlbeido * lightColor + SpecularColor;
-}
-
 void main()
 {
-  vec3 fragPosition = texture(texture_position, texCoord).rgb;
-  vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec3 surface = texture(texture_surface, texCoord).rgb;
+  vec3 fragPosition = texture(PositionTex, texCoord).rgb;
+  vec3 fragNormal = texture(NormalTex, texCoord).rgb;
+  vec3 surface = texture(SurfaceTex, texCoord).rgb;
 
-  vec3 fragAlbeido = texture(texture_albedo, texCoord).rgb * AlbeidoMultiplier;
+  vec3 fragAlbeido = texture(AlbedoTex, texCoord).rgb * AlbeidoMultiplier;
   float fragMetallic = surface.r * MetallicMultiplier;
   float fragRoughness = surface.b * RoughnessMultiplier;
   float fragIOR = surface.g;
 
-  vec3 fragLight = CalculateLighting(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR);
+  vec3 fragLight = vec3(0);
+  switch (brdfMethod)
+  {
+  case 0:
+    break;
+  case 1:
+    fragLight = CookTorranceBRDF(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR);
+    break;
+  }
+
   FragColor = vec4(fragLight, 1.0);
 }

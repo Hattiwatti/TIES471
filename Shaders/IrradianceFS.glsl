@@ -6,7 +6,7 @@ layout(location = 0) out vec4 FragColor;
 
 layout(std140) uniform ViewBlock
 {
-  mat4 ModelViewProj;
+  mat4 ViewProj;
   vec3 CameraPos;
   float AlbeidoMultiplier;
   float MetallicMultiplier;
@@ -17,11 +17,12 @@ layout(std140) uniform ViewBlock
 
 in vec2 texCoord;
 
-uniform sampler2D texture_position;
-uniform sampler2D texture_normal;
-uniform sampler2D texture_albedo;
-uniform sampler2D texture_surface;
-uniform samplerCube skyboxTexture;
+uniform sampler2D PositionTex;
+uniform sampler2D NormalTex;
+uniform sampler2D AlbedoTex;
+uniform sampler2D SurfaceTex;
+
+uniform samplerCube IrradianceTex;
 
 float GGGX(vec3 N, vec3 V, vec3 H, float a)
 {
@@ -68,37 +69,24 @@ vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
   return F0 + (max(vec3(1.0 - roughness), F0) - F0)*pow(1.0 - dotVH, 5.0);
 }
 
-
 vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
 {
-  vec3 viewDir = normalize(CameraPos - fragPos);
-  vec3 irradiance = texture(skyboxTexture, fragNormal).rgb;
+  vec3 irradiance = texture(IrradianceTex, fragNormal).rgb;
   vec3 diffuse = fragAlbeido * irradiance;
 
-  float IOR = 1.0;
-  vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
-  F0 = F0 * F0;
-  F0 = mix(F0, fragAlbeido, fragMetallic);
-
-  vec3 ks = vec3(0);
-  vec3 specular = vec3(0);// GatherSpecular(fragNormal, viewDir, fragRoughness, F0, ks);
-  vec3 kd = (vec3(1.0) - ks) * (1 - fragMetallic);
-
-  return kd * diffuse;
+  return diffuse;
 }
 
 void main()
 {
-  vec3 fragPosition = texture(texture_position, texCoord).rgb;
-  vec3 fragNormal = texture(texture_normal, texCoord).rgb;
-  vec3 surface = texture(texture_surface, texCoord).rgb;
+  vec3 fragPosition = texture(PositionTex, texCoord).rgb;
+  vec3 fragNormal = texture(NormalTex, texCoord).rgb;
+  vec3 surface = texture(SurfaceTex, texCoord).rgb;
 
-  vec3 fragAlbeido = texture(texture_albedo, texCoord).rgb * AlbeidoMultiplier;
+  vec3 fragAlbeido = texture(AlbedoTex, texCoord).rgb * AlbeidoMultiplier;
   float fragMetallic = surface.r * MetallicMultiplier;
   float fragRoughness = surface.b * RoughnessMultiplier;
   float fragIOR = surface.g;
-
-  fragRoughness = clamp(fragRoughness - 0.001, 0.0, 1.0) + 0.001;
 
   // Debug switches
   switch (method)

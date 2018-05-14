@@ -5,20 +5,14 @@
 #include "Model.h"
 #include "Light.h"
 
-enum BRDFMethod
-{
-  BlinnPhong,
-  CookTorrance
-};
-
 struct GBuffer
 {
-  GLuint fbo;
-  GLuint depth;
-  GLuint position;
-  GLuint normals;
-  GLuint albedo;
-  GLuint surface;
+  GLuint FBO;
+  GLuint DepthStencil;
+  GLuint Position;
+  GLuint Normal;
+  GLuint Albedo;
+  GLuint Surface;
 };
 
 struct DebugUniformBlock
@@ -38,13 +32,21 @@ struct UniformBlock
   DebugUniformBlock debugBlock;
 };
 
-// Use a struct for now
-struct DirectionalLight
+struct Skybox
 {
-  glm::mat4 viewMatrix;
-  glm::mat4 projMatrix;
-  glm::vec3 color;
-  GLuint shadowMap;
+  GLuint DiffuseTexture;
+  GLuint IrradianceTexture;
+  GLuint VBO;
+  GLuint IBO;
+};
+
+struct View
+{
+  glm::mat4 ViewMatrix;
+  glm::mat4 ProjectionMatrix;
+  glm::vec3 EyePosition;
+  glm::vec2 WindowSize;
+  float FieldOfView;
 };
 
 class Renderer
@@ -57,16 +59,13 @@ public:
 
   void NewFrame();
   void DrawGeometry(std::vector<Model*> const&, std::vector<std::unique_ptr<Light>> const&);
-  void GeometryPass(std::vector<Model*> const&);
-  void LightingPass(std::vector<std::unique_ptr<Light>> const& lights);
-  void Present();
 
   void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);
   void DrawSkybox();
 
-  void RecompileShaders() { m_shaderManager.Recompile(); }
+  void RecompileShaders() { m_pShaderManager->Recompile(); }
 
-  DebugUniformBlock& GetDebugStruct() { return m_uniformBlock.debugBlock; }
+  DebugUniformBlock& GetDebugStruct() { return m_UniformBlock.debugBlock; }
 
 private:
   void CreateBuffers(int width, int height);
@@ -77,35 +76,20 @@ private:
   void DrawIrradiance();
   void DrawLights(std::vector<std::unique_ptr<Light>> const&);
 
-  void SetupGeometryPass();
-  void SetupLightingPass();
-
-  //void GeometryPass(std::vector<Model *> const&);
-
+  void GeometryPass(std::vector<Model*> const&);
+  void LightingPass(std::vector<std::unique_ptr<Light>> const& lights);
 
 private:
-  ShaderManager m_shaderManager;
+  std::unique_ptr<ShaderManager> m_pShaderManager;
 
-  GBuffer m_gbuffer;
-  GLuint m_screenVbo;
+  GBuffer m_GBuffer;
+  GLuint m_ScreenVBO;
 
-  GLuint m_uniformBuffer;
-  UniformBlock m_uniformBlock;
+  GLuint m_UniformBuffer;
+  UniformBlock m_UniformBlock;
 
-  glm::mat4 m_viewMatrix;
-  glm::mat4 m_projMatrix;
-  glm::vec3 m_viewPos;
-  float m_fieldOfView;
-  glm::vec2 m_WindowSize;
-
-  GLuint skybox;
-  GLuint skyboxVBO;
-  GLuint skyboxIBO;
-  GLuint skyboxIrradiance;
-
-  GLuint DepthFBO;
-  DirectionalLight m_DirectionalLight;
-  bool m_UpdateShadowMaps;
+  Skybox m_Skybox;
+  View m_View;
 
 public:
   Renderer(Renderer const&) = delete;
