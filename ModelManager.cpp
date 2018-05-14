@@ -139,6 +139,7 @@ void ModelManager::LoadObj(const char* sFilename)
 void ModelManager::CreateSphereGrid()
 {
   glm::mat4 transform(1.0f);
+  transform[3][0] = -6.25f;
   transform[3][1] = 2.f;
 
   glm::vec4 color(1.0f, 0.2f, 0.2f, 1.0f);
@@ -169,7 +170,7 @@ void ModelManager::CreateSphereGrid()
       transform[3][0] += 2.5f;
     }
 
-    transform[3][0] = 0.f;
+    transform[3][0] = -6.25f;
     transform[3][1] += 2.5f;
   }
 
