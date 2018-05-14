@@ -177,10 +177,10 @@ void Renderer::CreateShaders()
   m_pShaderManager = std::make_unique<ShaderManager>();
 
   m_pShaderManager->AddShader("GeometryStageShader", "./Shaders/GeometryVS.glsl", "./Shaders/GeometryFS.glsl");
-  m_pShaderManager->AddShader("LightingStageShader", "./Shaders/LightingVS.glsl", "./Shaders/LightingFS.glsl");
-  
   m_pShaderManager->AddShader("IrradianceShader", "./Shaders/IrradianceVS.glsl", "./Shaders/IrradianceFS.glsl");
   m_pShaderManager->AddShader("PointLightShader", "./Shaders/PointLightVS.glsl", "./Shaders/PointLightFS.glsl");
+  m_pShaderManager->AddShader("SunShader", "./Shaders/SunVS.glsl", "./Shaders/SunFS.glsl");
+
 
   m_pShaderManager->AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
   m_pShaderManager->AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
@@ -365,6 +365,16 @@ void Renderer::DrawLights(std::vector<std::unique_ptr<Light>> const& lights)
 {
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE);
+
+  if (m_Options.DrawSun)
+  {
+    m_pShaderManager->UseShader("SunShader");
+    m_pShaderManager->SetUniform1i("PositionTex", 0);
+    m_pShaderManager->SetUniform1i("NormalTex", 1);
+    m_pShaderManager->SetUniform1i("AlbedoTex", 2);
+    m_pShaderManager->SetUniform1i("SurfaceTex", 3);
+    glDrawArrays(GL_QUADS, 0, 4);
+  }
 
   m_pShaderManager->UseShader("PointLightShader");
   m_pShaderManager->SetUniform1i("PositionTex", 0);

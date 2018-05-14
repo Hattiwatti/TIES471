@@ -174,4 +174,18 @@ void ModelManager::CreateSphereGrid()
     transform[3][1] += 2.5f;
   }
 
+  metallic = 0;
+  roughness = 0.5f;
+
+  transform[3][1] += 1.5f;
+
+  for (int i = 0; i < 5; ++i)
+  {
+    IoR = i / 4.f;
+    Model* newSphere = new Model(*pSphere);
+    newSphere->SetMaterial(std::make_shared<Material>(color, metallic, roughness, IoR));
+    newSphere->SetTransform(transform);
+    m_models.push_back(newSphere);
+    transform[3][0] += 2.5f;
+  }
 }

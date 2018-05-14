@@ -159,8 +159,8 @@
     <None Include="Shaders\GeometryVS.glsl" />
     <None Include="Shaders\IrradianceFS.glsl" />
     <None Include="Shaders\IrradianceVS.glsl" />
-    <None Include="Shaders\LightingFS.glsl" />
-    <None Include="Shaders\LightingVS.glsl" />
+    <None Include="Shaders\SunFS.glsl" />
+    <None Include="Shaders\SunVS.glsl" />
     <None Include="Shaders\PointLightFS.glsl" />
     <None Include="Shaders\PointLightVS.glsl" />
     <None Include="Shaders\SkyboxFS.glsl" />

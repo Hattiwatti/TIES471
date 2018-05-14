@@ -115,8 +115,11 @@ void Application::Run()
     m_dtFrameTime = m_CurrentFrameTime - m_LastFrameTime;
     m_LastFrameTime = m_CurrentFrameTime;
 
-    m_pCamera->Update(m_dtFrameTime);
-    m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
+    if (g_hasFocus)
+    {
+      m_pCamera->Update(m_dtFrameTime);
+      m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
+    }
 
     m_pLightManager->Update(m_dtFrameTime);
 
@@ -196,6 +199,7 @@ void Application::errorCallback(int error, const char* description)
 void Application::focusCallback(GLFWwindow* pWindow, int focused)
 {
   printf("FocusCallback Window 0x%X\tFocused: %d\n", pWindow, focused);
+  g_hasFocus = focused;
 }
 
 void Application::sizeCallback(GLFWwindow* pWindow, int width, int height)

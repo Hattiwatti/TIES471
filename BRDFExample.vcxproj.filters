@@ -121,12 +121,6 @@
     <None Include="Shaders\GeometryVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
-    <None Include="Shaders\LightingFS.glsl">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
-    <None Include="Shaders\LightingVS.glsl">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
     <None Include="Shaders\SkyboxFS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
@@ -149,6 +143,12 @@
       <Filter>Source Files\Shaders</Filter>
     </None>
     <None Include="Shaders\PointLightVS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\SunFS.glsl">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\SunVS.glsl">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>
