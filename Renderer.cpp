@@ -86,6 +86,11 @@ void Renderer::Initialize(glm::vec2 const& initialSize)
   m_Skybox.DiffuseTexture = LoadCubemap("./Resources/Textures/miramar/miramar.png");
   m_Skybox.IrradianceTexture = LoadCubemap("./Resources/Textures/miramar/miramar_irradiance.png");
 
+  m_Skybox.BRDFlut = SOIL_load_OGL_texture("./Resources/Textures/ibl_brdf_lut.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
+  m_Skybox.PrefilteredTexture = LoadCubemap("./Resources/Textures/miramar/pmrem_0.png");
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
   glGenBuffers(1, &m_Skybox.VBO);
   glBindBuffer(GL_ARRAY_BUFFER, m_Skybox.VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
@@ -266,9 +271,11 @@ void Renderer::LightingPass(std::vector<std::unique_ptr<Light>> const& lights)
 
   // Draw ambient irradiance from skybox
   glDepthFunc(GL_ALWAYS);
-  DrawIrradiance();
 
-  if(m_UniformBlock.debugBlock.debugMode == 0)
+  if(m_Options.DrawIndirect)
+    DrawIrradiance();
+
+  if(m_UniformBlock.debugBlock.debugMode == 0 && m_Options.DrawLights)
     DrawLights(lights);
 
   glDepthFunc(GL_LEQUAL);
@@ -276,7 +283,8 @@ void Renderer::LightingPass(std::vector<std::unique_ptr<Light>> const& lights)
   // Draw the skybox after everything else has been drawn
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_CULL_FACE);
-  DrawSkybox();
+  if(m_Options.DrawSkybox)
+    DrawSkybox();
 }
 
 void Renderer::DrawSkybox()
@@ -322,6 +330,13 @@ void Renderer::DrawIrradiance()
   m_pShaderManager->SetUniform1i("AlbedoTex", 2);
   m_pShaderManager->SetUniform1i("SurfaceTex", 3);
   m_pShaderManager->SetUniform1i("IrradianceTex", 4);
+  m_pShaderManager->SetUniform1i("PrefilteredTex", 5);
+  m_pShaderManager->SetUniform1i("BRDFLutTex", 6);
+
+  glActiveTexture(GL_TEXTURE5);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, m_Skybox.PrefilteredTexture);
+  glActiveTexture(GL_TEXTURE6);
+  glBindTexture(GL_TEXTURE_2D, m_Skybox.BRDFlut);
 
   glDrawArrays(GL_QUADS, 0, 4);
 }

@@ -38,6 +38,9 @@ struct Skybox
   GLuint IrradianceTexture;
   GLuint VBO;
   GLuint IBO;
+
+  GLuint PrefilteredTexture;
+  GLuint BRDFlut;
 };
 
 struct View
@@ -47,6 +50,14 @@ struct View
   glm::vec3 EyePosition;
   glm::vec2 WindowSize;
   float FieldOfView;
+};
+
+struct RenderOptions
+{
+  bool DrawLights{ true };
+  bool DrawSun{ true };
+  bool DrawIndirect{ true };
+  bool DrawSkybox{ true };
 };
 
 class Renderer
@@ -66,6 +77,7 @@ public:
   void RecompileShaders() { m_pShaderManager->Recompile(); }
 
   DebugUniformBlock& GetDebugStruct() { return m_UniformBlock.debugBlock; }
+  RenderOptions& GetOptions() { return m_Options; }
 
 private:
   void CreateBuffers(int width, int height);
@@ -90,6 +102,8 @@ private:
 
   Skybox m_Skybox;
   View m_View;
+
+  RenderOptions m_Options;
 
 public:
   Renderer(Renderer const&) = delete;

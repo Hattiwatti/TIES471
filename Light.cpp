@@ -1,9 +1,9 @@
 #include "Light.h"
 
 // +- constraints for random light positions
-static const float maxRandX = 20;
-static const float maxRandY = 10;
-static const float maxRandZ = 20;
+static const float maxRandX = 10;
+static const float maxRandY = 20;
+static const float maxRandZ = 10;
 
 static const float lightSpeed = 5.0f;
 

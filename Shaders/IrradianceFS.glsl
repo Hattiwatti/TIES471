@@ -22,7 +22,9 @@ uniform sampler2D NormalTex;
 uniform sampler2D AlbedoTex;
 uniform sampler2D SurfaceTex;
 
+uniform samplerCube PrefilteredTex;
 uniform samplerCube IrradianceTex;
+uniform sampler2D BRDFLutTex;
 
 float GGGX(vec3 N, vec3 V, vec3 H, float a)
 {
@@ -69,12 +71,31 @@ vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
   return F0 + (max(vec3(1.0 - roughness), F0) - F0)*pow(1.0 - dotVH, 5.0);
 }
 
-vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 fragAlbeido, float fragMetallic, float fragRoughness)
+vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 albedo, float metallic, float roughness, float IOR)
 {
-  vec3 irradiance = texture(IrradianceTex, fragNormal).rgb;
-  vec3 diffuse = fragAlbeido * irradiance;
+  vec3 V = normalize(CameraPos - fragPos);
+  vec3 N = normalize(fragNormal);
+  vec3 R = reflect(-V, N);
 
-  return diffuse;
+  float dotNV = max(dot(N, V), 0);
+
+  vec3 irradiance = texture(IrradianceTex, fragNormal).rgb;
+  vec3 diffuse = albedo * irradiance;
+
+  vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
+  F0 = F0 * F0;
+  F0 = mix(F0, albedo, metallic);
+
+  vec3 kS = FSchlick(fragNormal, V, F0, roughness);
+  vec3 kD = (1.0 - kS) * (1.0-metallic);
+
+  vec2 envBRDF = texture(BRDFLutTex, vec2(dotNV, roughness)).rg;
+  vec3 prefilteredColor = textureLod(PrefilteredTex,)
+
+  vec3 specular = 
+
+
+  return kD * diffuse;
 }
 
 void main()
@@ -92,7 +113,7 @@ void main()
   switch (method)
   {
   case 0: case 6: case 7:
-    FragColor = vec4(CalculateIrradiance(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness), 1.0f);
+    FragColor = vec4(CalculateIrradiance(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR), 1.0f);
     break;
   case 1:
     FragColor = vec4(fragPosition, 1.0);

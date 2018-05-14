@@ -85,7 +85,6 @@ vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float r
 
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
-  F0 = vec3(0.04);
   F0 = mix(F0, albedo, metallic);
 
   float D = DGGX(N, H, roughness);
@@ -99,14 +98,23 @@ vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float r
   return (kD * albedo / M_PI + specular) * radiance * dotNL;
 }
 
-vec3 BlinnPhongBRDF(vec3 N, vec3 L, vec3 H, float metallic)
+vec3 BlinnPhongBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic)
 {
-  float dotNH = dot(N, H);
-  float dotNL = dot(N, L);
-  dotNH = max(0.0001, min(1, dotNH));
+  float d = length(lightPosition - fragPos);
+  float attenuation = 1.0 / (d*d);
+  vec3 radiance = attenuation * lightColor * lightRadius * 10;
 
-  float intensity = pow(dotNH, metallic) * sqrt(dotNL);
-  return intensity * vec3(1.0);
+  vec3 L = normalize(lightPosition - fragPos);
+  vec3 V = normalize(CameraPos - fragPos);
+  vec3 H = normalize(L + V);
+
+  float dotNL = max(dot(N, L), 0.0);
+  float dotNH = max(dot(N, H), 0.0);
+  
+  float specular = pow(dotNH, 56.0);
+
+  vec3 diffuse = dotNL * albedo * radiance;
+  return diffuse + specular * vec3(1.0);
 }
 
 void main()
@@ -124,6 +132,7 @@ void main()
   switch (brdfMethod)
   {
   case 0:
+    fragLight = BlinnPhongBRDF(fragPosition, fragNormal, fragAlbeido, fragMetallic);
     break;
   case 1:
     fragLight = CookTorranceBRDF(fragPosition, fragNormal, fragAlbeido, fragMetallic, fragRoughness, fragIOR);
