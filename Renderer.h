@@ -39,7 +39,7 @@ struct Skybox
   GLuint VBO;
   GLuint IBO;
 
-  GLuint PrefilteredTexture;
+  GLuint PrefilteredTexture[7];
   GLuint BRDFlut;
 };
 

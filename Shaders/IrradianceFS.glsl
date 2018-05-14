@@ -1,6 +1,6 @@
 #version 400 core
-#define M_PI 3.1415926535897932384626433832795
-#define EPSILON 0.00001;
+#define M_PI 3.141592653589
+#define MAX_ENVLOD 7
 
 layout(location = 0) out vec4 FragColor;
 
@@ -22,9 +22,10 @@ uniform sampler2D NormalTex;
 uniform sampler2D AlbedoTex;
 uniform sampler2D SurfaceTex;
 
-uniform samplerCube PrefilteredTex;
 uniform samplerCube IrradianceTex;
 uniform sampler2D BRDFLutTex;
+
+uniform samplerCube PrefilteredTex[MAX_ENVLOD];
 
 float GGGX(vec3 N, vec3 V, vec3 H, float a)
 {
@@ -71,13 +72,27 @@ vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
   return F0 + (max(vec3(1.0 - roughness), F0) - F0)*pow(1.0 - dotVH, 5.0);
 }
 
+vec3 RetrieveEnvLod(vec3 R, float roughness)
+{
+  float lodLevel = (MAX_ENVLOD-1) * roughness;
+
+  int first = int(lodLevel);
+  int second = min(first + 1, MAX_ENVLOD-1);
+  float lerp = lodLevel - first;
+
+  vec3 color1 = texture(PrefilteredTex[first], R).rgb;
+  vec3 color2 = texture(PrefilteredTex[second], R).rgb;
+
+  return mix(color1, color2, lerp);
+}
+
 vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 albedo, float metallic, float roughness, float IOR)
 {
   vec3 V = normalize(CameraPos - fragPos);
   vec3 N = normalize(fragNormal);
-  vec3 R = reflect(-V, N);
+  vec3 R = normalize(reflect(-V, N));
 
-  float dotNV = max(dot(N, V), 0);
+  float dotNV = min(max(dot(N, V), 0), 0.99);
 
   vec3 irradiance = texture(IrradianceTex, fragNormal).rgb;
   vec3 diffuse = albedo * irradiance;
@@ -86,16 +101,14 @@ vec3 CalculateIrradiance(vec3 fragPos, vec3 fragNormal, vec3 albedo, float metal
   F0 = F0 * F0;
   F0 = mix(F0, albedo, metallic);
 
-  vec3 kS = FSchlick(fragNormal, V, F0, roughness);
-  vec3 kD = (1.0 - kS) * (1.0-metallic);
+  vec3 F = FSchlick(fragNormal, V, F0, roughness);
+  vec3 kD = (1.0 - F) * (1.0-metallic);
 
   vec2 envBRDF = texture(BRDFLutTex, vec2(dotNV, roughness)).rg;
-  vec3 prefilteredColor = textureLod(PrefilteredTex,)
+  vec3 prefilteredColor = RetrieveEnvLod(R, roughness);
 
-  vec3 specular = 
-
-
-  return kD * diffuse;
+  vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+  return (kD * diffuse + specular);
 }
 
 void main()

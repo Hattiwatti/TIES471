@@ -47,7 +47,7 @@ static const glm::vec3 skyboxVertices[24] =
 
 static GLuint LoadCubemap(const char* filename)
 {
-  GLuint cubemap = SOIL_load_OGL_single_cubemap(filename, "WNESUD", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
+  GLuint cubemap = SOIL_load_OGL_single_cubemap(filename, "WNESUD", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
   if (cubemap == 0)
   {
     std::cerr << "Failed to load cubemap from file " << filename << std::endl;
@@ -87,9 +87,18 @@ void Renderer::Initialize(glm::vec2 const& initialSize)
   m_Skybox.IrradianceTexture = LoadCubemap("./Resources/Textures/miramar/miramar_irradiance.png");
 
   m_Skybox.BRDFlut = SOIL_load_OGL_texture("./Resources/Textures/ibl_brdf_lut.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
-  m_Skybox.PrefilteredTexture = LoadCubemap("./Resources/Textures/miramar/pmrem_0.png");
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glBindTexture(GL_TEXTURE_2D, m_Skybox.BRDFlut);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  
+  m_Skybox.PrefilteredTexture[0] = LoadCubemap("./Resources/Textures/miramar/pmrem_0.png");
+  m_Skybox.PrefilteredTexture[1] = LoadCubemap("./Resources/Textures/miramar/pmrem_1.png");
+  m_Skybox.PrefilteredTexture[2] = LoadCubemap("./Resources/Textures/miramar/pmrem_2.png");
+  m_Skybox.PrefilteredTexture[3] = LoadCubemap("./Resources/Textures/miramar/pmrem_3.png");
+  m_Skybox.PrefilteredTexture[4] = LoadCubemap("./Resources/Textures/miramar/pmrem_4.png");
+  m_Skybox.PrefilteredTexture[5] = LoadCubemap("./Resources/Textures/miramar/pmrem_5.png");
+  m_Skybox.PrefilteredTexture[6] = LoadCubemap("./Resources/Textures/miramar/pmrem_6.png");
+
 
   glGenBuffers(1, &m_Skybox.VBO);
   glBindBuffer(GL_ARRAY_BUFFER, m_Skybox.VBO);
@@ -330,14 +339,25 @@ void Renderer::DrawIrradiance()
   m_pShaderManager->SetUniform1i("AlbedoTex", 2);
   m_pShaderManager->SetUniform1i("SurfaceTex", 3);
   m_pShaderManager->SetUniform1i("IrradianceTex", 4);
-  m_pShaderManager->SetUniform1i("PrefilteredTex", 5);
-  m_pShaderManager->SetUniform1i("BRDFLutTex", 6);
+  m_pShaderManager->SetUniform1i("BRDFLutTex", 5);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[0]", 6);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[1]", 7);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[2]", 8);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[3]", 9);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[4]", 10);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[5]", 11);
+  m_pShaderManager->SetUniform1i("PrefilteredTex[6]", 12);
 
   glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, m_Skybox.PrefilteredTexture);
-  glActiveTexture(GL_TEXTURE6);
   glBindTexture(GL_TEXTURE_2D, m_Skybox.BRDFlut);
+  for (int i = 0; i < 7; ++i)
+  {
+    glActiveTexture(GL_TEXTURE6 + i);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_Skybox.PrefilteredTexture[i]);
+  }
 
+
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   glDrawArrays(GL_QUADS, 0, 4);
 }
 
