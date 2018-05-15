@@ -29,7 +29,6 @@ private:
   GLuint m_metallicIoRTexture;
   GLuint m_roughnessTexture;
 
-  bool m_useTextures;
   MaterialProperties m_properties;
 
 public:

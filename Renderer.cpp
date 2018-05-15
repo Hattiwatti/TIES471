@@ -99,10 +99,11 @@ void Renderer::Initialize(glm::vec2 const& initialSize)
   m_Skybox.PrefilteredTexture[5] = LoadCubemap("./Resources/Textures/miramar/pmrem_5.png");
   m_Skybox.PrefilteredTexture[6] = LoadCubemap("./Resources/Textures/miramar/pmrem_6.png");
 
-
   glGenBuffers(1, &m_Skybox.VBO);
   glBindBuffer(GL_ARRAY_BUFFER, m_Skybox.VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void Renderer::CreateBuffers(int width, int height)
@@ -181,7 +182,6 @@ void Renderer::CreateShaders()
   m_pShaderManager->AddShader("PointLightShader", "./Shaders/PointLightVS.glsl", "./Shaders/PointLightFS.glsl");
   m_pShaderManager->AddShader("SunShader", "./Shaders/SunVS.glsl", "./Shaders/SunFS.glsl");
 
-
   m_pShaderManager->AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
   m_pShaderManager->AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
 }
@@ -193,7 +193,6 @@ void Renderer::NewFrame()
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
 }
 
 void Renderer::DrawGeometry(std::vector<Model*> const& models, std::vector<std::unique_ptr<Light>> const& lights)
@@ -354,8 +353,6 @@ void Renderer::DrawIrradiance()
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_Skybox.PrefilteredTexture[i]);
   }
 
-
-  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   glDrawArrays(GL_QUADS, 0, 4);
 }
 

@@ -73,8 +73,6 @@ public:
   void DrawGeometry(std::vector<Model*> const&, std::vector<std::unique_ptr<Light>> const&);
 
   void UpdateMatrices(glm::mat4 const& cameraTransform, float fieldOfView);
-  void DrawSkybox();
-
   void RecompileShaders() { m_pShaderManager->Recompile(); }
 
   DebugUniformBlock& GetDebugStruct() { return m_UniformBlock.debugBlock; }
@@ -84,10 +82,9 @@ private:
   void CreateBuffers(int width, int height);
   void CreateShaders();
 
-  void UpdateShadowMap();
-
   void DrawIrradiance();
   void DrawLights(std::vector<std::unique_ptr<Light>> const&);
+  void DrawSkybox();
 
   void GeometryPass(std::vector<Model*> const&);
   void LightingPass(std::vector<std::unique_ptr<Light>> const& lights);
