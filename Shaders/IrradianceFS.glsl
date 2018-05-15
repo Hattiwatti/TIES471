@@ -28,44 +28,10 @@ uniform sampler2D BRDFLutTex;
 
 uniform samplerCube PrefilteredTex[MAX_ENVLOD];
 
-float GGGX(vec3 N, vec3 V, vec3 H, float a)
-{
-  float dotVH = clamp(dot(V, H), 0.0, 1.0);
-  float dotVN = clamp(dot(V, N), 0.0, 1.0);
-
-  float chi = (dotVH / dotVN) > 0 ? 1 : 0;
-  float dotVH2 = dotVH * dotVH;
-  float tan2 = (1 - dotVH2) / dotVH2;
-
-  return(chi * 2) / (1 + sqrt(1 + a * a*tan2));
-}
-
-float GCookTorrance(vec3 N, vec3 V, vec3 L, vec3 H)
-{
-  float dotNV = dot(N, V);
-  float dotNH = dot(N, H);
-  float dotVH = dot(V, H);
-  float dotNL = dot(N, L);
-
-  float first = (2 * dotNH*dotNV) / dotVH;
-  float second = (2 * dotNH*dotNL) / dotVH;
-
-  return min(1, min(first, second));
-}
-
-vec3 FCookTorrance(vec3 V, vec3 H, vec3 F0)
-{
-  vec3 rootF0 = sqrt(F0);
-  vec3 n = (vec3(1) + rootF0) / (vec3(1) - rootF0);
-
-  vec3 c = vec3(dot(V, H));
-  vec3 g = sqrt(n*n + c * c - vec3(1));
-
-  vec3 term1 = (g - c) / (g + c);
-  vec3 term2 = ((g + c)*c - vec3(1)) / ((g - c)*c + vec3(1));
-
-  return 0.5 * term1 * term1 * (vec3(1) + term2 * term2);
-}
+// This shader is for calculating global illumination from pre-calculated textures
+// https://learnopengl.com/PBR/IBL/Specular-IBL
+// The textures are generated with cmftStudio, pre-calculated BRDF LUT is taken from the
+// link above.
 
 vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
 {
@@ -75,6 +41,8 @@ vec3 FSchlick(vec3 h, vec3 v, vec3 F0, float roughness)
 
 vec3 RetrieveEnvLod(vec3 R, float roughness)
 {
+  // Retrieve pre-calculated irradiance from textures based on roughness.
+
   float lodLevel = (MAX_ENVLOD-1) * roughness;
 
   int first = int(lodLevel);

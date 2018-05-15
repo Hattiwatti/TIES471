@@ -132,6 +132,8 @@ void ShaderManager::SetUniformMatrix(const char* uniformName, glm::mat4 const& v
 
 void ShaderManager::Recompile()
 {
+  // Recompile shaders to allow editing
+
   glUseProgram(GL_NONE);
   m_activeShader = nullptr;
 
@@ -146,6 +148,9 @@ void ShaderManager::Recompile()
 
 GLuint ShaderManager::GetUniformLocation(std::string const& uniformName)
 {
+  // Lookup uniform locations from a hashed map.
+  // If not found, try to add them and raise an error if the uniform doesn't exist
+
   auto result = m_activeShader->uniformLocations.find(uniformName);
   if (result == m_activeShader->uniformLocations.end())
   {

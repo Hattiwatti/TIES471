@@ -25,6 +25,7 @@ uniform sampler2D SurfaceTex;
 const vec3 SunColor = vec3(2, 2, 2);
 const vec3 SunDirection = normalize(vec3(0, -1, -1));
 
+// Shader for a single directional light (sun)
 
 float DGGX(vec3 N, vec3 H, float roughness)
 {

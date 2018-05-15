@@ -26,6 +26,8 @@ uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform float lightRadius;
 
+// This shader calculates lighting for point lights
+
 float DGGX(vec3 N, vec3 H, float roughness)
 {
   float a = roughness * roughness;
@@ -84,6 +86,7 @@ vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float r
   if (dotNL <= 0)
     return vec3(0, 0, 0);
 
+  // IOR for dielectric materials, surface color for metals
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
   F0 = mix(F0, albedo, metallic);
@@ -93,6 +96,8 @@ vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float r
   vec3 F = FSchlick(V, H, F0);
 
   vec3 specular = (D*F*G) / (4 * dotNL * dotNV);
+
+  // Conserve energy by adjusting diffuse strength so specular + diffuse <= 1
   vec3 kS = F;
   vec3 kD = (vec3(1.0) - kS) * (1.0-metallic);
 

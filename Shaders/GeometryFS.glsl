@@ -24,6 +24,12 @@ uniform float MaterialMetallic;
 uniform float MaterialRoughness;
 uniform float MaterialIOR;
 
+// Geometry buffer shader
+// Save position + normal + surface properties into buffer for 
+// the lighting stage.
+
+// gSurface.r = Metallic, gSurface.g = IOR, gSurface.b = Roughness
+
 void main()
 {
   gPosition = VertexIn.position;

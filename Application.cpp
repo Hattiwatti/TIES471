@@ -134,15 +134,20 @@ void Application::Run()
 
     if (g_hasFocus)
     {
+      // Update camera and render view accordingly
+
       m_pCamera->Update(m_dtFrameTime);
       m_pRenderer->UpdateMatrices(m_pCamera->GetTransform(), m_pCamera->GetFov());
     }
 
+    // Update randomly moving point lights
     m_pLightManager->Update(m_dtFrameTime);
 
+    // Draw stuff
     m_pRenderer->NewFrame();
     m_pRenderer->DrawGeometry(m_pModelManager->GetModels(), m_pLightManager->GetLights());
 
+    // UI drawing
     if (g_showUI)
     {
       ImGui_ImplGlfwGL3_NewFrame();

@@ -213,7 +213,8 @@ void Renderer::GeometryPass(std::vector<Model*> const& models)
   glStencilMask(0xFF);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  // Mark fragments which should be drawn
+  // Mark fragments that are being drawn to in the stencil buffer, so
+  // only those fragments get processed in the lighting pass.
   glEnable(GL_STENCIL_TEST);
   glStencilFunc(GL_ALWAYS, 1, 0xFF);
   glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -250,13 +251,13 @@ void Renderer::LightingPass(std::vector<std::unique_ptr<Light>> const& lights)
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
 
-  // Bind back buffer for drawing, bind gbuffer textures
+  // Bind default buffer for drawing, bind geometry buffer textures
   // so the lighting shader can use them.
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glBindFramebuffer(GL_READ_FRAMEBUFFER, m_GBuffer.FBO);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-  // Copy stencil data from frame buffer to back buffer
+  // Copy stencil data from geometry buffer to default buffer
   glBlitFramebuffer(0, 0, m_View.WindowSize.x, m_View.WindowSize.y, 0, 0, m_View.WindowSize.x, m_View.WindowSize.y, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -280,7 +281,6 @@ void Renderer::LightingPass(std::vector<std::unique_ptr<Light>> const& lights)
 
   // Draw ambient irradiance from skybox
   glDepthFunc(GL_ALWAYS);
-
   if(m_Options.DrawIndirect)
     DrawIrradiance();
 
