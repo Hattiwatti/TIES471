@@ -71,57 +71,39 @@ void ModelManager::LoadObj(const char* sFilename)
           pMaterial = m_materials[materialIndex];
       }
 
-      tinyobj::index_t idx0 = shape.mesh.indices[index_offset + 0];
-      tinyobj::index_t idx1 = shape.mesh.indices[index_offset + 1];
-      tinyobj::index_t idx2 = shape.mesh.indices[index_offset + 2];
+      VertexData v[3];
+      for (int i = 0; i < 3; ++i)
+      {
+        tinyobj::index_t idx = shape.mesh.indices[index_offset + i];
 
-      glm::vec3 v0 = glm::vec3(attrib.vertices[3 * idx0.vertex_index + 0],
-                                attrib.vertices[3 * idx0.vertex_index + 1],
-                                attrib.vertices[3 * idx0.vertex_index + 2]);
+        v[i].position = glm::vec3(attrib.vertices[3 * idx.vertex_index + 0],
+          attrib.vertices[3 * idx.vertex_index + 1],
+          attrib.vertices[3 * idx.vertex_index + 2]);
 
-      glm::vec3 v1 = glm::vec3(attrib.vertices[3 * idx1.vertex_index + 0],
-                                attrib.vertices[3 * idx1.vertex_index + 1],
-                                attrib.vertices[3 * idx1.vertex_index + 2]);
+        v[i].normal = glm::vec3(attrib.normals[3 * idx.normal_index + 0],
+          attrib.normals[3 * idx.normal_index + 1],
+          attrib.normals[3 * idx.normal_index + 2]);
 
-      glm::vec3 v2 = glm::vec3(attrib.vertices[3 * idx2.vertex_index + 0],
-                                attrib.vertices[3 * idx2.vertex_index + 1],
-                                attrib.vertices[3 * idx2.vertex_index + 2]);
+        v[i].texCoord = glm::vec2(attrib.texcoords[2 * idx.texcoord_index + 0],
+          attrib.texcoords[2 * idx.texcoord_index + 1]);
+      }
 
-
-      glm::vec3 n0 = glm::vec3(attrib.normals[3 * idx0.normal_index + 0],
-        attrib.normals[3 * idx0.vertex_index + 1],
-        attrib.normals[3 * idx0.vertex_index + 2]);
-
-      glm::vec3 n1 = glm::vec3(attrib.normals[3 * idx1.normal_index + 0],
-        attrib.normals[3 * idx1.vertex_index + 1],
-        attrib.normals[3 * idx1.vertex_index + 2]);
-
-      glm::vec3 n2 = glm::vec3(attrib.normals[3 * idx2.normal_index + 0],
-        attrib.normals[3 * idx2.vertex_index + 1],
-        attrib.normals[3 * idx2.vertex_index + 2]);
-
-      glm::vec2 uv0 = glm::vec2(attrib.texcoords[2 * idx0.texcoord_index + 0],
-        attrib.texcoords[2 * idx0.texcoord_index + 1]);
-
-      glm::vec2 uv1 = glm::vec2(attrib.texcoords[2 * idx1.texcoord_index + 0],
-        attrib.texcoords[2 * idx1.texcoord_index + 1]);
-
-      glm::vec2 uv2 = glm::vec2(attrib.texcoords[2 * idx2.texcoord_index + 0],
-        attrib.texcoords[2 * idx2.texcoord_index + 1]);
-
-      glm::vec3 deltaPos1 = v1 - v0;
-      glm::vec3 deltaPos2 = v2 - v0;
-      glm::vec2 deltaUV1 = uv1 - uv0;
-      glm::vec2 deltaUV2 = uv2 - uv0;
+      glm::vec3 deltaPos1 = v[1].position - v[0].position;
+      glm::vec3 deltaPos2 = v[2].position - v[0].position;
+      glm::vec2 deltaUV1 = v[1].texCoord - v[0].texCoord;
+      glm::vec2 deltaUV2 = v[2].texCoord - v[0].texCoord;
 
       float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
       glm::vec3 tangent = glm::normalize((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y)*r);
 
-      vertices.emplace_back(v0, n0, tangent, uv0);
+      for (int i = 0; i < 3; ++i)
+        v[i].tangent = tangent;
+
+      vertices.push_back(v[0]);
       shapeIndices.emplace_back(vertices.size() - 1);
-      vertices.emplace_back(v1, n1, tangent, uv1);
+      vertices.push_back(v[1]);
       shapeIndices.emplace_back(vertices.size() - 1);
-      vertices.emplace_back(v2, n2, tangent, uv2);
+      vertices.push_back(v[2]);
       shapeIndices.emplace_back(vertices.size() - 1);
 
       index_offset += faceIndex;

@@ -8,19 +8,10 @@
 
 struct VertexData
 {
-  glm::vec3 position;
-  glm::vec3 normal;
-  glm::vec3 tangent;
-  glm::vec2 texCoord;
-
-  VertexData(glm::vec3 pos, glm::vec3 norm, glm::vec3 t, glm::vec2 tex) :
-    position(pos),
-    normal(norm),
-    tangent(t),
-    texCoord(tex)
-  {
-
-  }
+  glm::vec3 position{ 0 };
+  glm::vec3 normal{ 0 };
+  glm::vec3 tangent{ 0 };
+  glm::vec2 texCoord{ 0 };
 };
 
 class Model
