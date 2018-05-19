@@ -146,6 +146,18 @@ void ShaderManager::Recompile()
   }
 }
 
+GLuint ShaderManager::GetProgramID(std::string const& name)
+{
+  auto result = m_shaderPrograms.find(name);
+  if (result == m_shaderPrograms.end())
+  {
+    std::cerr << "Shader \"" << name << "\" could not be found" << std::endl;
+    abort();
+  }
+
+  return result->second.programId;
+}
+
 GLuint ShaderManager::GetUniformLocation(std::string const& uniformName)
 {
   // Lookup uniform locations from a hashed map.

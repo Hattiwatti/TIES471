@@ -61,6 +61,18 @@ struct RenderOptions
   bool DrawSkybox{ true };
 };
 
+struct LightInfo
+{
+  glm::vec4 position;
+  glm::vec4 color;
+};
+
+struct LightBlock
+{
+  LightInfo lights[100];
+  int lightCount{ 0 };
+};
+
 class Renderer
 {
 public:
@@ -100,8 +112,10 @@ private:
 
   Skybox m_Skybox;
   View m_View;
-
   RenderOptions m_Options;
+
+  GLuint m_LightBuffer;
+  LightBlock m_LightBlock;
 
 public:
   Renderer(Renderer const&) = delete;

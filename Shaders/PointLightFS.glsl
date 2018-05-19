@@ -1,5 +1,6 @@
 #version 400 core
 #define M_PI 3.1415926535897932384626433832795
+#define MAX_POINTLIGHTS 100;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -15,16 +16,24 @@ layout(std140) uniform ViewBlock
   int brdfMethod;
 };
 
+struct Light
+{
+  vec4 position;
+  vec4 color;
+};
+
+layout(std140) uniform LightBlock
+{
+  Light light[100];
+  int numLights;
+};
+
 in vec2 texCoord;
 
 uniform sampler2D PositionTex;
 uniform sampler2D NormalTex;
 uniform sampler2D AlbedoTex;
 uniform sampler2D SurfaceTex;
-
-uniform vec3 lightPosition;
-uniform vec3 lightColor;
-uniform float lightRadius;
 
 // This shader calculates lighting for point lights
 
@@ -72,55 +81,69 @@ vec3 FSchlick(vec3 V, vec3 H, vec3 F0)
 
 vec3 CookTorranceBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic, float roughness, float IOR)
 {
-  float d = length(lightPosition - fragPos);
-  float attenuation = 1.0 / (d*d);
-  vec3 radiance = attenuation * lightColor * lightRadius * 10;
-
-  vec3 L = normalize(lightPosition - fragPos);
   vec3 V = normalize(CameraPos - fragPos);
-  vec3 H = normalize(L + V);
 
-  float dotNL = max(dot(N, L), 0.0);
-  float dotNV = max(dot(N, V), 0.0);
-
-  if (dotNL <= 0)
-    return vec3(0, 0, 0);
-
-  // IOR for dielectric materials, surface color for metals
   vec3 F0 = vec3(abs((1.0 - IOR) / (1.0 + IOR)));
   F0 = F0 * F0;
   F0 = mix(F0, albedo, metallic);
 
-  float D = DGGX(N, H, roughness);
-  float G = GSmith(N, V, L, roughness);
-  vec3 F = FSchlick(V, H, F0);
+  vec3 finalColor = vec3(0);
+  for (int i = 0; i < numLights; ++i)
+  {
+    vec3 L = normalize(light[i].position.rgb - fragPos);
+    float d = length(light[i].position.rgb - fragPos);
 
-  vec3 specular = (D*F*G) / (4 * dotNL * dotNV);
+    float dotNL = max(dot(N, L), 0.0);
+    if (dotNL <= 0)
+      continue;
 
-  // Conserve energy by adjusting diffuse strength so specular + diffuse <= 1
-  vec3 kS = F;
-  vec3 kD = (vec3(1.0) - kS) * (1.0-metallic);
+    float attenuation = 1.0 / (d*d);
+    vec3 radiance = attenuation * light[i].color.rgb * 100;
 
-  return (kD * albedo / M_PI + specular) * radiance * dotNL;
+    vec3 H = normalize(L + V);
+
+    float dotNV = max(dot(N, V), 0.0);
+    float D = DGGX(N, H, roughness);
+    float G = GSmith(N, V, L, roughness);
+    vec3 F = FSchlick(V, H, F0);
+
+    vec3 specular = (D*F*G) / (4 * dotNL * dotNV);
+
+    // Conserve energy by adjusting diffuse strength so specular + diffuse <= 1
+    vec3 kS = F;
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+    finalColor += (kD * albedo / M_PI + specular) * radiance * dotNL;
+  }
+
+  return finalColor;
 }
 
 vec3 BlinnPhongBRDF(vec3 fragPos, vec3 N, vec3 albedo, float metallic)
 {
-  float d = length(lightPosition - fragPos);
-  float attenuation = 1.0 / (d*d);
-  vec3 radiance = attenuation * lightColor * lightRadius * 10;
-
-  vec3 L = normalize(lightPosition - fragPos);
   vec3 V = normalize(CameraPos - fragPos);
-  vec3 H = normalize(L + V);
+  vec3 finalColor = vec3(0);
+  for (int i = 0; i < numLights; ++i)
+  {
+    vec3 L = normalize(light[i].position.rgb - fragPos);
+    vec3 H = normalize(L + V);
+    float dotNL = max(dot(N, L), 0.0);
 
-  float dotNL = max(dot(N, L), 0.0);
-  float dotNH = max(dot(N, H), 0.0);
-  
-  float specular = pow(dotNH, HardcodedSpecular);
+    if (dotNL <= 0)
+      continue;
 
-  vec3 diffuse = dotNL * albedo * radiance;
-  return diffuse + specular * vec3(1.0);
+    float d = length(light[i].position.rgb - fragPos);
+    float attenuation = 1.0 / (d*d);
+    vec3 radiance = attenuation * light[i].color.rgb * 100;
+    
+    float dotNH = max(dot(N, H), 0.0);
+    float specular = pow(dotNH, HardcodedSpecular);
+
+    vec3 diffuse = dotNL * albedo * radiance;
+    finalColor += diffuse + specular * vec3(1.0);
+  }
+
+  return finalColor;
 }
 
 void main()

@@ -170,6 +170,12 @@ void Renderer::CreateBuffers(int width, int height)
   glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformBlock), &m_UniformBlock, GL_DYNAMIC_DRAW);
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_UniformBuffer);
 
+  // Light buffer
+  glGenBuffers(1, &m_LightBuffer);
+  glBindBuffer(GL_UNIFORM_BUFFER, m_LightBuffer);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(LightBlock), &m_LightBlock, GL_DYNAMIC_DRAW);
+  glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_LightBuffer);
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -184,6 +190,13 @@ void Renderer::CreateShaders()
 
   m_pShaderManager->AddShader("SkyboxShader", "./Shaders/SkyboxVS.glsl", "./Shaders/SkyboxFS.glsl");
   m_pShaderManager->AddShader("ShadowMapShader", "./Shaders/DepthVS.glsl", "./Shaders/DepthFS.glsl");
+  
+  GLuint blockIndex = glGetUniformBlockIndex(m_pShaderManager->GetProgramID("PointLightShader"), "LightBlock");
+  GLuint blockIndex2 = glGetUniformBlockIndex(m_pShaderManager->GetProgramID("PointLightShader"), "ViewBlock");
+
+  std::cout << "BlockIndex " << blockIndex << std::endl;
+  std::cout << "BlockIndex2 " << blockIndex2 << std::endl;
+  glUniformBlockBinding(m_pShaderManager->GetProgramID("PointLightShader"), blockIndex, 1);
 }
 
 void Renderer::NewFrame()
@@ -376,14 +389,19 @@ void Renderer::DrawLights(std::vector<std::unique_ptr<Light>> const& lights)
   m_pShaderManager->SetUniform1i("NormalTex", 1);
   m_pShaderManager->SetUniform1i("AlbedoTex", 2);
   m_pShaderManager->SetUniform1i("SurfaceTex", 3);
+  
 
-  for (auto& pointLight : lights)
+  m_LightBlock.lightCount = lights.size() <= 100 ? lights.size() : 100;
+  for (int i = 0; i < lights.size(); ++i)
   {
-    m_pShaderManager->SetUniform3f("lightPosition", pointLight->GetPosition());
-    m_pShaderManager->SetUniform3f("lightColor", pointLight->GetColor());
-    m_pShaderManager->SetUniform1f("lightRadius", pointLight->GetRadius());
-    glDrawArrays(GL_QUADS, 0, 4);
+    if (i >= 100) break;
+    m_LightBlock.lights[i].position = glm::vec4(lights[i]->GetPosition(), 0);
+    m_LightBlock.lights[i].color = glm::vec4(lights[i]->GetColor(), 0);
   }
 
+  glBindBuffer(GL_UNIFORM_BUFFER, m_LightBuffer);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightBlock), &m_LightBlock);
+
+  glDrawArrays(GL_QUADS, 0, 4);
   glDisable(GL_BLEND);
 }

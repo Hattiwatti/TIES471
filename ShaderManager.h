@@ -39,6 +39,7 @@ public:
   void SetUniformMatrix(const char* uniformName, glm::mat4 const& value);
 
   void Recompile();
+  GLuint GetProgramID(std::string const& name);
 
 private:
   GLuint GetUniformLocation(std::string const& uniformName);
